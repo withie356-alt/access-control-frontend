@@ -1,0 +1,226 @@
+import React, { useState } from 'react';
+import api from '../../services/api';
+import { AccessApplication, ApplicationStatus } from '../../types';
+
+const CheckStatusPage: React.FC = () => {
+  const [phone, setPhone] = useState('');
+  const [applications, setApplications] = useState<AccessApplication[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [searched, setSearched] = useState(false);
+  const [editingApp, setEditingApp] = useState<AccessApplication | null>(null);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phone) {
+      setError('전화번호를 입력해주세요.');
+      return;
+    }
+    setIsLoading(true);
+    setError('');
+    setSearched(true);
+    try {
+      const results = await api.getApplicationsByPhone(phone);
+      setApplications(results);
+    } catch (err) {
+      setError('신청 내역을 불러오는 데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdate = async (updatedApp: AccessApplication) => {
+    if (!updatedApp) return;
+    setIsLoading(true);
+    try {
+        await api.updateApplication(updatedApp.id, updatedApp);
+        alert('신청 정보가 수정되었습니다.');
+        setEditingApp(null);
+        // Refresh list after update
+        const results = await api.getApplicationsByPhone(phone);
+        setApplications(results);
+    } catch(err) {
+        setError('수정에 실패했습니다.');
+    } finally {
+        setIsLoading(false);
+    }
+  }
+
+  const StatusBadge: React.FC<{ status: ApplicationStatus }> = ({ status }) => {
+    const baseClasses = "px-2 inline-flex text-xs leading-5 font-semibold rounded-full";
+    const statusClasses = {
+      [ApplicationStatus.Pending]: "bg-yellow-100 text-yellow-800",
+      [ApplicationStatus.Approved]: "bg-green-100 text-green-800",
+      [ApplicationStatus.Rejected]: "bg-red-100 text-red-800",
+    };
+    return <span className={`${baseClasses} ${statusClasses[status]}`}>{status}</span>;
+  };
+
+  if (editingApp) {
+    return (
+        <EditApplicationModal 
+            application={editingApp}
+            onClose={() => setEditingApp(null)}
+            onSave={handleUpdate}
+        />
+    )
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="bg-white p-8 rounded-lg shadow-md mb-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">신청 내역 조회</h1>
+        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="전화번호를 입력하세요 (예: 010-1234-5678)"
+            className="flex-grow block w-full rounded-md border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 sm:text-sm"
+          />
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="px-6 py-2 bg-power-blue-600 text-white rounded-md hover:bg-power-blue-700 disabled:bg-gray-400"
+          >
+            {isLoading ? '조회 중...' : '조회'}
+          </button>
+        </form>
+        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+      </div>
+
+      {searched && !isLoading && (
+        <div className="bg-white p-8 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">조회 결과</h2>
+            {applications.length > 0 ? (
+                <div className="space-y-6">
+                    {applications.map(app => (
+                        <div key={app.id} className="border border-gray-200 rounded-lg p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="font-bold text-xl text-gray-800">{app.projectName}</p>
+                                    <p className="text-sm text-gray-500">신청일: {new Date(app.createdAt).toLocaleString()}</p>
+                                </div>
+                                <StatusBadge status={app.status} />
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div><span className="font-medium text-gray-600">신청자:</span> {app.name}</div>
+                                <div><span className="font-medium text-gray-600">연락처:</span> {app.phone}</div>
+                                <div><span className="font-medium text-gray-600">성별:</span> {app.gender || '-'}</div>
+                                <div><span className="font-medium text-gray-600">국적:</span> {app.nationality || '-'}</div>
+                                {app.nationality && app.nationality !== '한국' && (
+                                    <div><span className="font-medium text-gray-600">여권번호:</span> {app.passportNumber || '-'}</div>
+                                )}
+                                <div><span className="font-medium text-gray-600">업체명:</span> {app.company}</div>
+                                {app.department && <div><span className="font-medium text-gray-600">담당부서:</span> {app.department}</div>}
+                                <div><span className="font-medium text-gray-600">차량번호:</span> {app.vehicleNumber || '-'}</div>
+                                <div><span className="font-medium text-gray-600">차량종류:</span> {app.vehicleType || '-'}</div>
+                                <div className="md:col-span-2"><span className="font-medium text-gray-600">역할:</span> {app.roles && app.roles.length > 0 ? app.roles.join(', ') : '-'}</div>
+                            </div>
+
+                            <div className="mt-6 pt-4 border-t border-gray-200">
+                                {app.status === ApplicationStatus.Pending && (
+                                    <button onClick={() => setEditingApp(app)} className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                        수정하기
+                                    </button>
+                                )}
+                                {app.status === ApplicationStatus.Approved && (
+                                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                                        <p className="font-semibold text-green-800">승인이 완료되었습니다.</p>
+                                        <p className="text-sm text-green-700">입력하신 휴대전화번호({app.phone})로 QR코드 링크가 전송되었습니다.</p>
+                                    </div>
+                                )}
+                                {app.status === ApplicationStatus.Rejected && (
+                                    <div className="text-center p-4 bg-red-50 rounded-lg">
+                                        <p className="font-semibold text-red-800">신청이 반려되었습니다.</p>
+                                        <p className="text-sm text-red-700">자세한 내용은 관리자에게 문의해주세요.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="text-center py-8 text-gray-500">해당 전화번호로 등록된 신청 내역이 없습니다.</p>
+            )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Full-featured Edit Modal Component
+const EditApplicationModal: React.FC<{
+  application: AccessApplication;
+  onClose: () => void;
+  onSave: (app: AccessApplication) => void;
+}> = ({ application, onClose, onSave }) => {
+  const [formData, setFormData] = useState<AccessApplication>(application);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 m-4">
+        <div className="flex justify-between items-center border-b pb-3 mb-4">
+            <h2 className="text-xl font-bold text-gray-800">신청 정보 수정</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <InputField label="신청자명" name="name" value={formData.name} onChange={handleChange} required />
+                <InputField label="연락처" name="phone" value={formData.phone} onChange={handleChange} required />
+                <InputField label="업체명" name="company" value={formData.company} onChange={handleChange} required />
+                <InputField label="공사명" name="projectName" value={formData.projectName} onChange={handleChange} required />
+                <InputField label="차량번호" name="vehicleNumber" value={formData.vehicleNumber || ''} onChange={handleChange} />
+                <InputField label="차량종류" name="vehicleType" value={formData.vehicleType || ''} onChange={handleChange} />
+                <InputField label="성별" name="gender" value={formData.gender || ''} onChange={handleChange} />
+                <InputField label="국적" name="nationality" value={formData.nationality || ''} onChange={handleChange} />
+                {formData.nationality !== '한국' && 
+                    <InputField label="여권번호" name="passportNumber" value={formData.passportNumber || ''} onChange={handleChange} />
+                }
+                <InputField label="담당부서" name="department" value={formData.department || ''} onChange={handleChange} />
+            </div>
+            <div className="flex justify-end space-x-3 pt-4">
+                <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+                취소
+                </button>
+                <button type="submit" className="px-4 py-2 bg-power-blue-600 text-white rounded-md hover:bg-power-blue-700">
+                저장
+                </button>
+            </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const InputField: React.FC<{
+    label: string;
+    name: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    required?: boolean;
+}> = ({ label, name, value, onChange, required }) => (
+    <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <input 
+            type="text" 
+            name={name} 
+            value={value} 
+            onChange={onChange} 
+            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3" 
+            required={required} 
+        />
+    </div>
+);
+
+export default CheckStatusPage;
