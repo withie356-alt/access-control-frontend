@@ -21,9 +21,14 @@ export interface AccessApplication {
   gender?: string;
   nationality?: string;
   passportNumber?: string;
-  roles?: string[];
+  isSiteRepresentative?: boolean;
+  vehicleOwner?: boolean;
+  vehicleOwnerName?: string;
   vehicleType?: string;
   department?: string;
+  startDate?: string;
+  endDate?: string;
+  projectManager?: string;
 }
 
 export interface Project {

@@ -15,7 +15,9 @@ const ApplyPage: React.FC = () => {
     gender: '',
     nationality: '한국',
     passportNumber: '',
-    roles: [] as string[],
+    isSiteRepresentative: false,
+    vehicleOwner: false,
+    vehicleOwnerName: '',
     vehicleNumber: '',
     vehicleType: '',
   });
@@ -57,13 +59,17 @@ const ApplyPage: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleRoleChange = (role: string) => {
-    setFormData(prev => {
-      const newRoles = prev.roles.includes(role)
-        ? prev.roles.filter(r => r !== role)
-        : [...prev.roles, role];
-      return { ...prev, roles: newRoles };
-    });
+  const handleSiteRepresentativeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, isSiteRepresentative: e.target.checked }));
+  };
+
+  const handleVehicleOwnerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      vehicleOwner: e.target.checked,
+      // 차량 소유자 체크 해제 시 차량 정보 초기화
+      ...(e.target.checked ? {} : { vehicleOwnerName: '', vehicleNumber: '', vehicleType: '' }),
+    }));
   };
 
   const handleProjectSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -125,7 +131,7 @@ const ApplyPage: React.FC = () => {
   };
 
   const validateStep2 = () => {
-    return formData.name && formData.phone && formData.company && formData.projectName && formData.gender && formData.nationality;
+    return formData.name && formData.phone && formData.company && formData.projectName && formData.gender && formData.nationality && (!formData.vehicleOwner || (formData.vehicleOwnerName && formData.vehicleNumber && formData.vehicleType));
   }
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -442,12 +448,12 @@ const ApplyPage: React.FC = () => {
                 <div className="flex items-start">
                   <input 
                     type="checkbox" 
-                    id="role-supervisor" 
-                    checked={formData.roles.includes('현장대리인')}
-                    onChange={() => handleRoleChange('현장대리인')}
+                    id="isSiteRepresentative" 
+                    checked={formData.isSiteRepresentative}
+                    onChange={handleSiteRepresentativeChange}
                     className="h-5 w-5 text-power-blue-600 border-gray-300 rounded focus:ring-power-blue-500 mt-0.5 flex-shrink-0" 
                   />
-                  <label htmlFor="role-supervisor" className="ml-3 block text-sm text-gray-900">
+                  <label htmlFor="isSiteRepresentative" className="ml-3 block text-sm text-gray-900">
                     <span className="font-medium">현장대리인</span>
                     <span className="text-gray-500 text-xs block mt-1">현장관리 및 감독업무</span>
                   </label>
@@ -455,12 +461,12 @@ const ApplyPage: React.FC = () => {
                 <div className="flex items-start">
                   <input 
                     type="checkbox" 
-                    id="role-vehicle-owner" 
-                    checked={formData.roles.includes('차량소유자')}
-                    onChange={() => handleRoleChange('차량소유자')}
+                    id="vehicleOwner" 
+                    checked={formData.vehicleOwner}
+                    onChange={handleVehicleOwnerChange}
                     className="h-5 w-5 text-power-blue-600 border-gray-300 rounded focus:ring-power-blue-500 mt-0.5 flex-shrink-0" 
                   />
-                  <label htmlFor="role-vehicle-owner" className="ml-3 block text-sm text-gray-900">
+                  <label htmlFor="vehicleOwner" className="ml-3 block text-sm text-gray-900">
                     <span className="font-medium">차량소유자</span>
                     <span className="text-gray-500 text-xs block mt-1">차량 운행 및 관리</span>
                   </label>
@@ -469,10 +475,23 @@ const ApplyPage: React.FC = () => {
             </div>
 
             {/* 차량정보 입력 섹션 */}
-            {formData.roles.includes('차량소유자') && (
+            {formData.vehicleOwner && (
               <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
                 <h2 className="text-lg sm:text-xl font-semibold mb-4 text-orange-800">차량정보</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="vehicleOwnerName" className="block text-sm font-medium text-gray-700 mb-2">차량 소유자 이름 *</label>
+                    <input 
+                      type="text" 
+                      name="vehicleOwnerName" 
+                      id="vehicleOwnerName" 
+                      value={formData.vehicleOwnerName} 
+                      onChange={handleInputChange} 
+                      className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm sm:text-base py-3 px-4" 
+                      placeholder="차량 소유자 이름을 입력하세요"
+                      required 
+                    />
+                  </div>
                   <div>
                     <label htmlFor="vehicleNumber" className="block text-sm font-medium text-gray-700 mb-2">차량번호 *</label>
                     <input 

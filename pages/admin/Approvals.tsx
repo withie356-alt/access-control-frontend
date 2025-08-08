@@ -57,6 +57,18 @@ const ApprovalsPage: React.FC = () => {
     }
   };
 
+  const handleDeleteApplication = async (id: string) => {
+    if (window.confirm('정말로 이 신청을 삭제하시겠습니까?')) {
+      try {
+        await api.deleteApplication(id);
+        alert('신청이 삭제되었습니다.');
+        fetchApplications();
+      } catch (error) {
+        alert('삭제 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
   const handleEditApplication = async (updatedApp: AccessApplication) => {
     try {
       await api.updateApplication(updatedApp.id, updatedApp);
@@ -98,7 +110,7 @@ const ApprovalsPage: React.FC = () => {
   }, [applications]);
 
   const StatusBadge: React.FC<{ status: ApplicationStatus }> = ({ status }) => {
-    const baseClasses = "px-2 inline-flex text-xs leading-5 font-semibold rounded-full";
+    const baseClasses = "px-4 py-2 inline-flex text-base leading-5 font-semibold rounded-full";
     const statusClasses = {
       [ApplicationStatus.Pending]: "bg-yellow-100 text-yellow-800",
       [ApplicationStatus.Approved]: "bg-green-100 text-green-800",
@@ -136,22 +148,22 @@ const ApprovalsPage: React.FC = () => {
       </div>
 
       <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-yellow-50 p-3 rounded-lg flex items-center justify-between">
-            <span className="text-sm font-medium text-yellow-800">승인 대기</span>
-            <span className="text-xl font-bold text-yellow-600">{applicationCounts.Pending}</span>
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-yellow-50 p-3 rounded-lg text-center">
+            <div className="text-base font-medium text-yellow-800">승인 대기</div>
+            <div className="text-xl font-bold text-yellow-600">{applicationCounts.Pending}명</div>
           </div>
-          <div className="bg-green-50 p-3 rounded-lg flex items-center justify-between">
-            <span className="text-sm font-medium text-green-800">승인 완료</span>
-            <span className="text-xl font-bold text-green-600">{applicationCounts.Approved}</span>
+          <div className="bg-green-50 p-3 rounded-lg text-center">
+            <div className="text-base font-medium text-green-800">승인 완료</div>
+            <div className="text-xl font-bold text-green-600">{applicationCounts.Approved}명</div>
           </div>
-          <div className="bg-red-50 p-3 rounded-lg flex items-center justify-between">
-            <span className="text-sm font-medium text-red-800">반려</span>
-            <span className="text-xl font-bold text-red-600">{applicationCounts.Rejected}</span>
+          <div className="bg-red-50 p-3 rounded-lg text-center">
+            <div className="text-base font-medium text-red-800">반려</div>
+            <div className="text-xl font-bold text-red-600">{applicationCounts.Rejected}명</div>
           </div>
-          <div className="bg-blue-50 p-3 rounded-lg flex items-center justify-between">
-            <span className="text-sm font-medium text-blue-800">전체</span>
-            <span className="text-xl font-bold text-blue-600">{applicationCounts.Total}</span>
+          <div className="bg-blue-50 p-3 rounded-lg text-center">
+            <div className="text-base font-medium text-blue-800">전체</div>
+            <div className="text-xl font-bold text-blue-600">{applicationCounts.Total}명</div>
           </div>
         </div>
       </div>
@@ -173,26 +185,41 @@ const ApprovalsPage: React.FC = () => {
             {app.department && <div className="text-sm text-gray-600">담당부서: <span className="font-medium text-gray-800">{app.department}</span></div>}
             <div className="text-xs text-gray-400 mt-1">신청일: {new Date(app.createdAt).toLocaleString()}</div>
             
-            <div className="flex gap-2 mt-3">
-              <button onClick={() => setDetailModal({open: true, app})} className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200">
+            <div className="flex flex-wrap gap-2 mt-3">
+              <button onClick={() => setDetailModal({open: true, app})} className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">
                 세부정보
               </button>
                   {app.status === ApplicationStatus.Pending && (
                     <>
-                  <button onClick={() => handleApprovalAction([app.id], 'approve')} className="flex-1 px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700">
+                  <button onClick={() => handleApprovalAction([app.id], 'approve')} className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">
                     승인
                   </button>
-                  <button onClick={() => handleApprovalAction([app.id], 'reject')} className="flex-1 px-3 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700">
+                  <button onClick={() => handleApprovalAction([app.id], 'reject')} className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">
                     반려
                   </button>
                     </>
                   )}
-            </div>
-            {(app.status === ApplicationStatus.Pending || app.status === ApplicationStatus.Approved) && (
-              <button onClick={() => setEditModal({open: true, app})} className="w-full px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 mt-2">
+                  {app.status === ApplicationStatus.Approved && (
+                    <button onClick={() => handleApprovalAction([app.id], 'reject')} className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">
+                      반려
+                    </button>
+                  )}
+                  {app.status === ApplicationStatus.Rejected && (
+                    <button onClick={() => handleApprovalAction([app.id], 'approve')} className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">
+                      승인
+                    </button>
+                  )}
+            {(app.status === ApplicationStatus.Pending || app.status === ApplicationStatus.Approved || app.status === ApplicationStatus.Rejected) && (
+              <button onClick={() => setEditModal({open: true, app})} className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">
                 수정
               </button>
             )}
+            {(app.status === ApplicationStatus.Approved || app.status === ApplicationStatus.Rejected) && (
+              <button onClick={() => handleDeleteApplication(app.id)} className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">
+                삭제
+              </button>
+            )}
+            </div>
           </div>
         ))}
       </div>

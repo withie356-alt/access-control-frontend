@@ -3,19 +3,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import api from '../../services/api';
 import { DailyStats } from '../../types';
 
+import { AccessApplication, DailyStats } from '../../types';
+
 // Person 타입
-interface Person {
-  id: string;
-  name: string;
-  phone: string;
-  gender: string;
-  role: string;
+interface Person extends AccessApplication {
   checkInTime: string;
   checkOutTime: string;
   qrId: string;
   constructionDetails: string;
   companyInfo: string;
-  vehicleNumber: string;
 }
 
 interface DashboardStats {
@@ -36,39 +32,75 @@ const DashboardPage: React.FC = () => {
       name: '홍길동',
       phone: '010-1234-5678',
       gender: '남',
-      role: '작업자',
+      isSiteRepresentative: true,
+      vehicleOwner: true,
+      vehicleOwnerName: '홍길동',
+      vehicleNumber: '12가 3456',
+      vehicleType: '승용차',
       checkInTime: '08:00',
       checkOutTime: '',
       qrId: 'QR12345',
       constructionDetails: 'A동 내부 마감 공사',
       companyInfo: 'ABC 건설',
-      vehicleNumber: '12가 3456',
+      company: 'ABC 건설',
+      projectName: 'A동 신축 공사',
+      agreedOn: new Date().toISOString(),
+      signature: 'base64string',
+      status: '대기',
+      createdAt: new Date().toISOString(),
+      startDate: '2024-01-01',
+      endDate: '2024-12-31',
+      department: '건설부',
+      projectManager: '박영수',
     },
     {
       id: '2',
       name: '김영희',
       phone: '010-9876-5432',
       gender: '여',
-      role: '관리자',
+      isSiteRepresentative: false,
+      vehicleOwner: false,
       checkInTime: '09:00',
       checkOutTime: '18:00',
       qrId: 'QR67890',
       constructionDetails: 'B동 전기 설비 점검',
       companyInfo: 'XYZ 엔지니어링',
-      vehicleNumber: '78나 9012',
+      company: 'XYZ 엔지니어링',
+      projectName: 'B동 리모델링',
+      agreedOn: new Date().toISOString(),
+      signature: 'base64string',
+      status: '완료',
+      createdAt: new Date().toISOString(),
+      startDate: '2024-03-15',
+      endDate: '2024-06-30',
+      department: '전기부',
+      projectManager: '최지영',
     },
     {
       id: '3',
       name: '이철수',
       phone: '010-5555-1111',
       gender: '남',
-      role: '안전관리자',
+      isSiteRepresentative: true,
+      vehicleOwner: true,
+      vehicleOwnerName: '이철수',
+      vehicleNumber: '34다 5678',
+      vehicleType: '화물차',
       checkInTime: '07:30',
       checkOutTime: '17:30',
       qrId: 'QR11223',
       constructionDetails: '전체 현장 안전 점검',
       companyInfo: '안전제일 컨설팅',
-      vehicleNumber: '34다 5678',
+      company: '안전제일 컨설팅',
+      projectName: '안전 점검',
+      agreedOn: new Date().toISOString(),
+      signature: 'base64string',
+      status: '반려',
+      createdAt: new Date().toISOString(),
+      startDate: '2024-07-01',
+      endDate: '2024-07-15',
+      department: '안전관리부',
+      projectManager: '강민준',
     },
   ];
 
@@ -121,12 +153,10 @@ const DashboardPage: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-slate-100">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">출입상태</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">성명</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">차량번호</th>
-                <th className="relative px-6 py-3">
-                  <span className="sr-only">상세</span>
-                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">출입상태</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">성명</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">차량번호</th>
+                <th className="relative px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">상세보기</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -142,14 +172,14 @@ const DashboardPage: React.FC = () => {
 
                 return (
                   <tr key={person.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                       <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full ${badge} text-white text-xs font-semibold`}>
                         {status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{person.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{person.vehicleNumber}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">{person.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{person.vehicleNumber}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                       <button
                         onClick={() => handleDetailClick(person)}
                         className="text-indigo-600 hover:text-indigo-900 px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
@@ -193,45 +223,134 @@ const DashboardPage: React.FC = () => {
 
       {/* Detail Modal */}
       {showDetailModal && selectedPerson && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex justify-center items-center">
-          <div className="relative p-8 bg-white w-96 max-w-md mx-auto rounded-xl shadow-2xl border">
+        <div
+          className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex justify-center items-center"
+          onClick={() => setShowDetailModal(false)}
+        >
+          <div
+            className="relative p-8 bg-white w-96 max-w-md mx-auto rounded-xl shadow-2xl border max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-xl font-bold mb-4 text-gray-800">출입자 상세 정보</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg">
-                <p className="font-semibold text-gray-600">성명:</p>
-                <p className="text-gray-800">{selectedPerson.name}</p>
+            <div className="space-y-4 text-sm text-gray-700">
+              {/* 출근/퇴근 시간 */}
+              <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">출근/퇴근 시간</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-semibold text-gray-600">출근시간:</p>
+                    <p className="text-gray-800">{selectedPerson.checkInTime}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">퇴근시간:</p>
+                    <p className="text-gray-800">{selectedPerson.checkOutTime || '미퇴근'}</p>
+                  </div>
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg">
-                <p className="font-semibold text-gray-600">연락처:</p>
-                <p className="text-gray-800">{selectedPerson.phone}</p>
+
+              {/* 기본 정보 */}
+              <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">기본 정보</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-semibold text-gray-600">성명:</p>
+                    <p className="text-gray-800">{selectedPerson.name}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">연락처:</p>
+                    <p className="text-gray-800">{selectedPerson.phone}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">성별:</p>
+                    <p className="text-gray-800">{selectedPerson.gender}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">국적:</p>
+                    <p className="text-gray-800">{selectedPerson.nationality}</p>
+                  </div>
+                  
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg">
-                <p className="font-semibold text-gray-600">성별:</p>
-                <p className="text-gray-800">{selectedPerson.gender}</p>
+
+              {/* 역할 정보 */}
+              <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">역할 정보</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {selectedPerson.isSiteRepresentative && (
+                    <div className="col-span-2">
+                      <p className="text-gray-800">
+                        <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                          현장대리인
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                  {selectedPerson.vehicleOwner && (
+                    <div className="col-span-2">
+                      <p className="text-gray-800">
+                        <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                          차량소유자
+                        </span>
+                      </p>
+                      <div className="grid grid-cols-2 gap-4 mt-2 p-2 border border-gray-200 rounded-lg">
+                        <div>
+                          <p className="font-semibold text-gray-600">차량번호:</p>
+                          <p className="text-gray-800">{selectedPerson.vehicleNumber}</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-600">차량종류:</p>
+                          <p className="text-gray-800">{selectedPerson.vehicleType}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg">
-                <p className="font-semibold text-gray-600">역할:</p>
-                <p className="text-gray-800">{selectedPerson.role}</p>
+
+              {/* 공사 정보 */}
+              <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">공사 정보</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-semibold text-gray-600">공사명:</p>
+                    <p className="text-gray-800">{selectedPerson.projectName}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">공사 내용:</p>
+                    <p className="text-gray-800">{selectedPerson.constructionDetails}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">공사 기간:</p>
+                    <p className="text-gray-800">{selectedPerson.startDate} ~ <br />{selectedPerson.endDate}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">담당 부서:</p>
+                    <p className="text-gray-800">{selectedPerson.department}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">담당자:</p>
+                    <p className="text-gray-800">{selectedPerson.projectManager}</p>
+                  </div>
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg">
-                <p className="font-semibold text-gray-600">차량번호:</p>
-                <p className="text-gray-800">{selectedPerson.vehicleNumber}</p>
-              </div>
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg">
-                <p className="font-semibold text-gray-600">출근시간:</p>
-                <p className="text-gray-800">{selectedPerson.checkInTime}</p>
-              </div>
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg">
-                <p className="font-semibold text-gray-600">퇴근시간:</p>
-                <p className="text-gray-800">{selectedPerson.checkOutTime}</p>
-              </div>
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg md:col-span-2">
-                <p className="font-semibold text-gray-600">공사 내용:</p>
-                <p className="text-gray-800">{selectedPerson.constructionDetails}</p>
-              </div>
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg md:col-span-2">
-                <p className="font-semibold text-gray-600">업체 정보:</p>
-                <p className="text-gray-800">{selectedPerson.companyInfo}</p>
+
+              {/* 업체 정보 */}
+              <div className="bg-white p-4 rounded-lg shadow-md border border-ray-200">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">업체 정보</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-semibold text-gray-600">업체명:</p>
+                    <p className="text-gray-800">{selectedPerson.company}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">담당부서:</p>
+                    <p className="text-gray-800">{selectedPerson.department}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">담당자:</p>
+                    <p className="text-gray-800">{selectedPerson.projectManager}</p>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="mt-6 text-right">

@@ -166,6 +166,16 @@ const api = {
     return simulateDelay(updated);
   },
 
+  deleteApplication: async (id: string): Promise<{id: string}> => {
+    console.log('API: Deleting application', id);
+    const initialLength = mockApplications.length;
+    mockApplications = mockApplications.filter(app => app.id !== id);
+    if (mockApplications.length === initialLength) {
+      throw new Error('Application not found');
+    }
+    return simulateDelay({ id });
+  },
+
   getDashboardStats: async () => {
     console.log('API: Fetching dashboard stats');
     const dailyStats: DailyStats[] = [
