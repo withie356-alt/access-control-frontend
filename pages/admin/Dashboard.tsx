@@ -12,6 +12,7 @@ interface Person extends AccessApplication {
   qrId: string;
   constructionDetails: string;
   companyInfo: string;
+  companyContactPerson: string; // Add this line
 }
 
 interface DashboardStats {
@@ -25,6 +26,8 @@ const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const dummyPeople: Person[] = [
     {
@@ -44,14 +47,15 @@ const DashboardPage: React.FC = () => {
       companyInfo: 'ABC 건설',
       company: 'ABC 건설',
       projectName: 'A동 신축 공사',
-      agreedOn: new Date().toISOString(),
+      agreedOn: new Date('2024-08-08T10:00:00Z').toISOString(),
       signature: 'base64string',
       status: '대기',
-      createdAt: new Date().toISOString(),
+      createdAt: new Date('2024-08-08T10:00:00Z').toISOString(),
       startDate: '2024-01-01',
       endDate: '2024-12-31',
       department: '건설부',
       projectManager: '박영수',
+      companyContactPerson: '김대표',
     },
     {
       id: '2',
@@ -67,14 +71,15 @@ const DashboardPage: React.FC = () => {
       companyInfo: 'XYZ 엔지니어링',
       company: 'XYZ 엔지니어링',
       projectName: 'B동 리모델링',
-      agreedOn: new Date().toISOString(),
+      agreedOn: new Date('2024-08-07T09:00:00Z').toISOString(),
       signature: 'base64string',
       status: '완료',
-      createdAt: new Date().toISOString(),
+      createdAt: new Date('2024-08-07T09:00:00Z').toISOString(),
       startDate: '2024-03-15',
       endDate: '2024-06-30',
       department: '전기부',
       projectManager: '최지영',
+      companyContactPerson: '이부장',
     },
     {
       id: '3',
@@ -93,16 +98,233 @@ const DashboardPage: React.FC = () => {
       companyInfo: '안전제일 컨설팅',
       company: '안전제일 컨설팅',
       projectName: '안전 점검',
-      agreedOn: new Date().toISOString(),
+      agreedOn: new Date('2024-08-06T07:30:00Z').toISOString(),
       signature: 'base64string',
       status: '반려',
-      createdAt: new Date().toISOString(),
+      createdAt: new Date('2024-08-06T07:30:00Z').toISOString(),
       startDate: '2024-07-01',
       endDate: '2024-07-15',
       department: '안전관리부',
       projectManager: '강민준',
+      companyContactPerson: '박팀장',
+    },
+    {
+      id: '4',
+      name: '박민수',
+      phone: '010-2222-3333',
+      gender: '남',
+      isSiteRepresentative: false,
+      vehicleOwner: false,
+      checkInTime: '08:30',
+      checkOutTime: '',
+      qrId: 'QR44556',
+      constructionDetails: 'C동 내부 도장 공사',
+      companyInfo: '도장 전문',
+      company: '도장 전문',
+      projectName: 'C동 리모델링',
+      agreedOn: new Date('2024-08-08T08:30:00Z').toISOString(),
+      signature: 'base64string',
+      status: '대기',
+      createdAt: new Date('2024-08-08T08:30:00Z').toISOString(),
+      startDate: '2024-08-01',
+      endDate: '2024-09-30',
+      department: '도장부',
+      projectManager: '이수진',
+      companyContactPerson: '최과장',
+    },
+    {
+      id: '5',
+      name: '최지혜',
+      phone: '010-4444-5555',
+      gender: '여',
+      isSiteRepresentative: true,
+      vehicleOwner: true,
+      vehicleOwnerName: '최지혜',
+      vehicleNumber: '56가 7890',
+      vehicleType: '승합차',
+      checkInTime: '09:30',
+      checkOutTime: '17:00',
+      qrId: 'QR77889',
+      constructionDetails: 'D동 외부 유리 설치',
+      companyInfo: '유리 시공',
+      company: '유리 시공',
+      projectName: 'D동 신축',
+      agreedOn: new Date('2024-08-07T09:30:00Z').toISOString(),
+      signature: 'base64string',
+      status: '완료',
+      createdAt: new Date('2024-08-07T09:30:00Z').toISOString(),
+      startDate: '2024-07-01',
+      endDate: '2024-08-15',
+      department: '외장부',
+      projectManager: '김철수',
+      companyContactPerson: '정대리',
+    },
+    {
+      id: '6',
+      name: '정우성',
+      phone: '010-6666-7777',
+      gender: '남',
+      isSiteRepresentative: false,
+      vehicleOwner: false,
+      checkInTime: '10:00',
+      checkOutTime: '',
+      qrId: 'QR10112',
+      constructionDetails: 'E동 내부 배관 공사',
+      companyInfo: '배관 설비',
+      company: '배관 설비',
+      projectName: 'E동 증축',
+      agreedOn: new Date('2024-08-08T10:00:00Z').toISOString(),
+      signature: 'base64string',
+      status: '대기',
+      createdAt: new Date('2024-08-08T10:00:00Z').toISOString(),
+      startDate: '2024-08-10',
+      endDate: '2024-09-10',
+      department: '설비부',
+      projectManager: '박영수',
+      companyContactPerson: '김팀장',
+    },
+    {
+      id: '7',
+      name: '이지은',
+      phone: '010-8888-9999',
+      gender: '여',
+      isSiteRepresentative: false,
+      vehicleOwner: false,
+      checkInTime: '11:00',
+      checkOutTime: '16:00',
+      qrId: 'QR13141',
+      constructionDetails: 'F동 조경 공사',
+      companyInfo: '조경 디자인',
+      company: '조경 디자인',
+      projectName: 'F동 신축',
+      agreedOn: new Date('2024-08-07T11:00:00Z').toISOString(),
+      signature: 'base64string',
+      status: '완료',
+      createdAt: new Date('2024-08-07T11:00:00Z').toISOString(),
+      startDate: '2024-07-20',
+      endDate: '2024-08-05',
+      department: '조경부',
+      projectManager: '최지영',
+      companyContactPerson: '이과장',
+    },
+    {
+      id: '8',
+      name: '강동원',
+      phone: '010-1111-2222',
+      gender: '남',
+      isSiteRepresentative: true,
+      vehicleOwner: true,
+      vehicleOwnerName: '강동원',
+      vehicleNumber: '90가 1234',
+      vehicleType: '승용차',
+      checkInTime: '07:00',
+      checkOutTime: '18:30',
+      qrId: 'QR15161',
+      constructionDetails: 'G동 내부 철거',
+      companyInfo: '철거 전문',
+      company: '철거 전문',
+      projectName: 'G동 리모델링',
+      agreedOn: new Date('2024-08-06T07:00:00Z').toISOString(),
+      signature: 'base64string',
+      status: '완료',
+      createdAt: new Date('2024-08-06T07:00:00Z').toISOString(),
+      startDate: '2024-06-01',
+      endDate: '2024-06-30',
+      department: '철거부',
+      projectManager: '강민준',
+      companyContactPerson: '박부장',
+    },
+    {
+      id: '9',
+      name: '신민아',
+      phone: '010-3333-4444',
+      gender: '여',
+      isSiteRepresentative: false,
+      vehicleOwner: false,
+      checkInTime: '08:45',
+      checkOutTime: '',
+      qrId: 'QR17181',
+      constructionDetails: 'H동 전기 배선',
+      companyInfo: '전기 공사',
+      company: '전기 공사',
+      projectName: 'H동 신축',
+      agreedOn: new Date('2024-08-08T08:45:00Z').toISOString(),
+      signature: 'base64string',
+      status: '대기',
+      createdAt: new Date('2024-08-08T08:45:00Z').toISOString(),
+      startDate: '2024-08-05',
+      endDate: '2024-09-15',
+      department: '전기부',
+      projectManager: '이수진',
+      companyContactPerson: '최팀장',
+    },
+    {
+      id: '10',
+      name: '유재석',
+      phone: '010-5555-6666',
+      gender: '남',
+      isSiteRepresentative: false,
+      vehicleOwner: false,
+      checkInTime: '09:15',
+      checkOutTime: '17:45',
+      qrId: 'QR19202',
+      constructionDetails: 'I동 소방 설비',
+      companyInfo: '소방 안전',
+      company: '소방 안전',
+      projectName: 'I동 증축',
+      agreedOn: new Date('2024-08-07T09:15:00Z').toISOString(),
+      signature: 'base64string',
+      status: '완료',
+      createdAt: new Date('2024-08-07T09:15:00Z').toISOString(),
+      startDate: '2024-07-10',
+      endDate: '2024-07-30',
+      department: '소방부',
+      projectManager: '김철수',
+      companyContactPerson: '정대리',
+    },
+    {
+      id: '11',
+      name: '이효리',
+      phone: '010-7777-8888',
+      gender: '여',
+      isSiteRepresentative: true,
+      vehicleOwner: true,
+      vehicleOwnerName: '이효리',
+      vehicleNumber: '00가 0000',
+      vehicleType: '승용차',
+      checkInTime: '08:00',
+      checkOutTime: '',
+      qrId: 'QR21223',
+      constructionDetails: 'J동 내부 마감 공사',
+      companyInfo: '마감 전문',
+      company: '마감 전문',
+      projectName: 'J동 신축',
+      agreedOn: new Date('2024-08-08T08:00:00Z').toISOString(),
+      signature: 'base64string',
+      status: '대기',
+      createdAt: new Date('2024-08-08T08:00:00Z').toISOString(),
+      startDate: '2024-08-01',
+      endDate: '2024-09-30',
+      department: '마감부',
+      projectManager: '박영수',
+      companyContactPerson: '이부장',
     },
   ];
+
+  // Sort dummyPeople by createdAt in ascending order
+  const sortedPeople = [...dummyPeople].sort((a, b) => {
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+
+  // Get current posts
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPeople = sortedPeople.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Change page
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  const totalPages = Math.ceil(sortedPeople.length / itemsPerPage);
 
   const handleDetailClick = (person: Person) => {
     setSelectedPerson(person);
@@ -153,33 +375,43 @@ const DashboardPage: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-slate-100">
               <tr>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">출입상태</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">성명</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">차량번호</th>
-                <th className="relative px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">상세보기</th>
+                <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">시간</th>
+                <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">출입상태</th>
+                <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">성명</th>
+                <th className="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">차량번호</th>
+                <th className="relative px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">상세보기</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {dummyPeople.map((person) => {
+              {currentPeople.map((person) => {
                 const status =
                   person.checkInTime && !person.checkOutTime ? '출근' : person.checkInTime && person.checkOutTime ? '퇴근' : '미출근';
                 const badge =
                   status === '출근'
                     ? 'bg-emerald-500'
                     : status === '퇴근'
-                    ? 'bg-orange-500'
+                    ? 'bg-gray-500'
                     : 'bg-slate-400';
+
+                const time = status === '출근' ? person.checkInTime : person.checkOutTime;
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                const formattedDate = `${yyyy}-${mm}-${dd}`;
+                const displayTime = time ? `${formattedDate} ${time}` : '';
 
                 return (
                   <tr key={person.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                    <td className="px-1 py-4 whitespace-nowrap text-center text-sm text-gray-500">{displayTime}</td>
+                    <td className="px-1 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                       <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full ${badge} text-white text-xs font-semibold`}>
                         {status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">{person.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{person.vehicleNumber}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                    <td className="px-1 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">{person.name}</td>
+                    <td className="px-1 py-4 whitespace-nowrap text-center text-sm text-gray-500">{person.vehicleNumber}</td>
+                    <td className="px-1 py-4 whitespace-nowrap text-center text-sm font-medium">
                       <button
                         onClick={() => handleDetailClick(person)}
                         className="text-indigo-600 hover:text-indigo-900 px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
@@ -200,6 +432,36 @@ const DashboardPage: React.FC = () => {
               })}
             </tbody>
           </table>
+        </div>
+        {/* Pagination Controls */}
+        <div className="flex justify-center mt-4">
+          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <button
+              onClick={() => paginate(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+            >
+              이전
+            </button>
+            {[...Array(totalPages)].map((_, index) => (
+              <button
+                key={index}
+                onClick={() => paginate(index + 1)}
+                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 ${
+                  currentPage === index + 1 ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' : ''
+                }`}
+              >
+                {index + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => paginate(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+            >
+              다음
+            </button>
+          </nav>
         </div>
       </div>
 
@@ -348,7 +610,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-gray-600">담당자:</p>
-                    <p className="text-gray-800">{selectedPerson.projectManager}</p>
+                    <p className="text-gray-800">{selectedPerson.companyContactPerson}</p>
                   </div>
                 </div>
               </div>

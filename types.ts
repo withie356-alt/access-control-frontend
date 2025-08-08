@@ -29,6 +29,7 @@ export interface AccessApplication {
   startDate?: string;
   endDate?: string;
   projectManager?: string;
+  constructionDetails?: string;
 }
 
 export interface Project {

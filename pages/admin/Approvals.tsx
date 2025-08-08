@@ -2,12 +2,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../services/api';
 import { AccessApplication, ApplicationStatus } from '../../types';
+import { ArrowPathIcon } from '../../components/icons';
 
 const ApprovalsPage: React.FC = () => {
   const [applications, setApplications] = useState<AccessApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'all'>('all');
+  const [showSearchInput, setShowSearchInput] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [detailModal, setDetailModal] = useState<{open: boolean, app: AccessApplication | null}>({open: false, app: null});
   const [editModal, setEditModal] = useState<{open: boolean, app: AccessApplication | null}>({open: false, app: null});
@@ -122,11 +124,37 @@ const ApprovalsPage: React.FC = () => {
   // 카드형 UI + 모달
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800">출입 승인 관리</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">출입 승인 관리</h1>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => setShowSearchInput(!showSearchInput)}
+            className="w-16 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+          >
+            검색
+          </button>
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value as any)}
+            className="px-4 py-2 rounded-lg border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+          >
+            <option value="all">모든 상태</option>
+            <option value={ApplicationStatus.Pending}>승인 대기</option>
+            <option value={ApplicationStatus.Approved}>승인 완료</option>
+            <option value={ApplicationStatus.Rejected}>반려</option>
+          </select>
+          <button
+            onClick={fetchApplications}
+            className="p-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50"
+            title="새로고침"
+          >
+            <ArrowPathIcon className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
 
-      {/* New container for search and filter */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <div className="flex flex-col md:flex-row gap-4">
+      {showSearchInput && (
+        <div className="bg-white p-4 rounded-lg shadow-md mb-6">
           <input
             type="text"
             placeholder="이름, 업체명, 공사명 검색..."
@@ -134,18 +162,8 @@ const ApprovalsPage: React.FC = () => {
             onChange={e => setSearchTerm(e.target.value)}
             className="w-full p-3 rounded-lg border-gray-300 shadow-sm"
           />
-          <select 
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as any)}
-            className="w-full p-3 rounded-lg border-gray-300 shadow-sm"
-          >
-            <option value="all">모든 상태</option>
-            <option value={ApplicationStatus.Pending}>승인 대기</option>
-            <option value={ApplicationStatus.Approved}>승인 완료</option>
-            <option value={ApplicationStatus.Rejected}>반려</option>
-          </select>
         </div>
-      </div>
+      )}
 
       <div className="bg-white p-4 rounded-lg shadow-md mb-6">
         <div className="grid grid-cols-4 gap-4">
@@ -226,26 +244,136 @@ const ApprovalsPage: React.FC = () => {
 
       {/* 세부정보 모달 */}
       {detailModal.open && detailModal.app && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 relative animate-fade-in">
-            <button onClick={() => setDetailModal({open: false, app: null})} className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
-            <h2 className="text-xl font-bold mb-4 text-gray-800">출입신청 세부정보</h2>
-            <div className="space-y-2 text-sm">
-              <div><span className="font-medium text-gray-600">신청자:</span> {detailModal.app.name}</div>
-              <div><span className="font-medium text-gray-600">연락처:</span> {detailModal.app.phone}</div>
-              <div><span className="font-medium text-gray-600">성별:</span> {detailModal.app.gender || '-'}</div>
-              <div><span className="font-medium text-gray-600">국적:</span> {detailModal.app.nationality || '-'}</div>
-              {detailModal.app.nationality && detailModal.app.nationality !== '한국' && (
-                <div><span className="font-medium text-gray-600">여권번호:</span> {detailModal.app.passportNumber || '-'}</div>
-              )}
-              <div><span className="font-medium text-gray-600">업체명:</span> {detailModal.app.company}</div>
-              {detailModal.app.department && <div><span className="font-medium text-gray-600">담당부서:</span> {detailModal.app.department}</div>}
-              <div><span className="font-medium text-gray-600">공사명:</span> {detailModal.app.projectName}</div>
-              <div><span className="font-medium text-gray-600">차량번호:</span> {detailModal.app.vehicleNumber || '-'}</div>
-              <div><span className="font-medium text-gray-600">차량종류:</span> {detailModal.app.vehicleType || '-'}</div>
-              <div><span className="font-medium text-gray-600">역할:</span> {detailModal.app.roles && detailModal.app.roles.length > 0 ? detailModal.app.roles.join(', ') : '-'}</div>
-              <div><span className="font-medium text-gray-600">신청일:</span> {new Date(detailModal.app.createdAt).toLocaleString()}</div>
-              <div><span className="font-medium text-gray-600">상태:</span> <StatusBadge status={detailModal.app.status} /></div>
+        <div
+          className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex justify-center items-center"
+          onClick={() => setDetailModal({open: false, app: null})}
+        >
+          <div
+            className="relative p-8 bg-white w-96 max-w-md mx-auto rounded-xl shadow-2xl border max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold mb-4 text-gray-800">출입자 상세 정보</h3>
+            <div className="space-y-4 text-sm text-gray-700">
+              {/* 승인상태 */}
+              <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">승인상태</h4>
+                <div>
+                  <StatusBadge status={detailModal.app.status} />
+                </div>
+              </div>
+
+              {/* 기본 정보 */}
+              <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">기본 정보</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-semibold text-gray-600">성명:</p>
+                    <p className="text-gray-800">{detailModal.app.name}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">연락처:</p>
+                    <p className="text-gray-800">{detailModal.app.phone}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">성별:</p>
+                    <p className="text-gray-800">{detailModal.app.gender}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800">국적:</p>
+                    <p className="text-gray-800">{detailModal.app.nationality}</p>
+                  </div>
+                  
+                </div>
+              </div>
+
+              {/* 역할 정보 */}
+              <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">역할 정보</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {detailModal.app.isSiteRepresentative && (
+                    <div className="col-span-2">
+                      <p className="text-gray-800">
+                        <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                          현장대리인
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                  {detailModal.app.vehicleOwner && (
+                    <div className="col-span-2">
+                      <p className="text-gray-800">
+                        <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                          차량소유자
+                        </span>
+                      </p>
+                      <div className="grid grid-cols-2 gap-4 mt-2 p-2 border border-gray-200 rounded-lg">
+                        <div>
+                          <p className="font-semibold text-gray-600">차량번호:</p>
+                          <p className="text-gray-800">{detailModal.app.vehicleNumber}</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-600">차량종류:</p>
+                          <p className="text-gray-800">{detailModal.app.vehicleType}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 공사 정보 */}
+              <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">공사 정보</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-semibold text-gray-600">공사명:</p>
+                    <p className="text-gray-800">{detailModal.app.projectName}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">공사 내용:</p>
+                    <p className="text-gray-800">{detailModal.app.constructionDetails}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">공사 기간:</p>
+                    <p className="text-gray-800">{detailModal.app.startDate} ~ <br />{detailModal.app.endDate}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">담당 부서:</p>
+                    <p className="text-gray-800">{detailModal.app.department}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">담당자:</p>
+                    <p className="text-gray-800">{detailModal.app.projectManager}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 업체 정보 */}
+              <div className="bg-white p-4 rounded-lg shadow-md border border-ray-200">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">업체 정보</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-semibold text-gray-600">업체명:</p>
+                    <p className="text-gray-800">{detailModal.app.company}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">담당부서:</p>
+                    <p className="text-gray-800">{detailModal.app.department}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">담당자:</p>
+                    <p className="text-gray-800">{detailModal.app.projectManager}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 text-right">
+              <button
+                onClick={() => setDetailModal({open: false, app: null})}
+                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-200 shadow-md"
+              >
+                닫기
+              </button>
             </div>
           </div>
         </div>
