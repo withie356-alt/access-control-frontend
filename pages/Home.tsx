@@ -15,8 +15,15 @@ const HomePage: React.FC = () => {
         />
       </div>
 
-      {/* 관리자 버튼 - 우측 상부 */}
-      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex items-center">
+      {/* 관리자 및 경비실 버튼 - 우측 상부 */}
+      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex items-center space-x-2">
+        <Link
+          to="/guardroom/dashboard"
+          className="inline-flex items-center px-2 py-1 sm:px-4 sm:py-2 bg-power-blue-600 text-white text-xs sm:text-sm font-medium rounded-md hover:bg-power-blue-700 transition-colors duration-200 shadow-sm"
+        >
+          <CheckBadgeIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+          경비실
+        </Link>
         <Link
           to="/admin/dashboard"
           className="inline-flex items-center px-2 py-1 sm:px-4 sm:py-2 bg-power-blue-600 text-white text-xs sm:text-sm font-medium rounded-md hover:bg-power-blue-700 transition-colors duration-200 shadow-sm"

@@ -69,19 +69,19 @@ const CheckStatusPage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-white p-8 rounded-lg shadow-md mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">신청 내역 조회</h1>
+        
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
           <input
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="전화번호를 입력하세요 (예: 010-1234-5678)"
-            className="flex-grow block w-full rounded-md border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 sm:text-sm"
+            className="flex-grow block w-full rounded-md border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 sm:text-sm py-2 px-3"
           />
           <button
             type="submit"
             disabled={isLoading}
-            className="px-6 py-2 bg-power-blue-600 text-white rounded-md hover:bg-power-blue-700 disabled:bg-gray-400"
+            className="px-6 py-2 bg-power-blue-600 text-white rounded-md hover:bg-power-blue-700 disabled:bg-gray-400 whitespace-nowrap"
           >
             {isLoading ? '조회 중...' : '조회'}
           </button>
@@ -96,48 +96,26 @@ const CheckStatusPage: React.FC = () => {
                 <div className="space-y-6">
                     {applications.map(app => (
                         <div key={app.id} className="border border-gray-200 rounded-lg p-6">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <p className="font-bold text-xl text-gray-800">{app.projectName}</p>
-                                    <p className="text-sm text-gray-500">신청일: {new Date(app.createdAt).toLocaleString()}</p>
+                            {app.status === ApplicationStatus.Pending ? (
+                                <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                                    <p className="font-semibold text-yellow-800">승인 대기중입니다.</p>
+                                    <p className="text-sm text-yellow-700">관리자의 승인을 기다려주세요.</p>
                                 </div>
-                                <StatusBadge status={app.status} />
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                <div><span className="font-medium text-gray-600">신청자:</span> {app.name}</div>
-                                <div><span className="font-medium text-gray-600">연락처:</span> {app.phone}</div>
-                                <div><span className="font-medium text-gray-600">성별:</span> {app.gender || '-'}</div>
-                                <div><span className="font-medium text-gray-600">국적:</span> {app.nationality || '-'}</div>
-                                {app.nationality && app.nationality !== '한국' && (
-                                    <div><span className="font-medium text-gray-600">여권번호:</span> {app.passportNumber || '-'}</div>
-                                )}
-                                <div><span className="font-medium text-gray-600">업체명:</span> {app.company}</div>
-                                {app.department && <div><span className="font-medium text-gray-600">담당부서:</span> {app.department}</div>}
-                                <div><span className="font-medium text-gray-600">차량번호:</span> {app.vehicleNumber || '-'}</div>
-                                <div><span className="font-medium text-gray-600">차량종류:</span> {app.vehicleType || '-'}</div>
-                                <div className="md:col-span-2"><span className="font-medium text-gray-600">역할:</span> {app.roles && app.roles.length > 0 ? app.roles.join(', ') : '-'}</div>
-                            </div>
-
-                            <div className="mt-6 pt-4 border-t border-gray-200">
-                                {app.status === ApplicationStatus.Pending && (
-                                    <button onClick={() => setEditingApp(app)} className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                                        수정하기
-                                    </button>
-                                )}
-                                {app.status === ApplicationStatus.Approved && (
-                                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                                        <p className="font-semibold text-green-800">승인이 완료되었습니다.</p>
-                                        <p className="text-sm text-green-700">입력하신 휴대전화번호({app.phone})로 QR코드 링크가 전송되었습니다.</p>
-                                    </div>
-                                )}
-                                {app.status === ApplicationStatus.Rejected && (
-                                    <div className="text-center p-4 bg-red-50 rounded-lg">
-                                        <p className="font-semibold text-red-800">신청이 반려되었습니다.</p>
-                                        <p className="text-sm text-red-700">자세한 내용은 관리자에게 문의해주세요.</p>
-                                    </div>
-                                )}
-                            </div>
+                            ) : app.status === ApplicationStatus.Rejected ? (
+                                <div className="text-center p-4 bg-red-50 rounded-lg">
+                                    <p className="font-semibold text-red-800">신청이 반려되었습니다.</p>
+                                    <p className="text-sm text-red-700">자세한 내용은 관리자에게 문의해주세요.</p>
+                                </div>
+                            ) : (
+                                <div className="text-center p-4 bg-green-50 rounded-lg">
+                                    <p className="font-semibold text-green-800 mb-2">출입 QR 코드</p>
+                                    {app.qrCodeUrl ? (
+                                        <img src={app.qrCodeUrl} alt="QR Code" className="max-w-xs mx-auto border border-gray-300 p-2 rounded-md" />
+                                    ) : (
+                                        <p className="text-sm text-red-700">QR 코드를 불러올 수 없습니다.</p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

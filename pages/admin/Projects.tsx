@@ -219,9 +219,7 @@ const ProjectsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-800">공사 관리</h1>
-        <div className="flex items-center space-x-4">
+      <div className="flex justify-end items-center space-x-4">
           <button
             onClick={() => setShowSearchInput(!showSearchInput)}
             className="w-16 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
@@ -241,7 +239,6 @@ const ProjectsPage: React.FC = () => {
             <option value="InProgress">공사 중</option>
             <option value="Completed">공사 완료</option>
           </select>
-        </div>
       </div>
 
       {showSearchInput && (

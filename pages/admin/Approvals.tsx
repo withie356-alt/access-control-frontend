@@ -124,9 +124,7 @@ const ApprovalsPage: React.FC = () => {
   // 카드형 UI + 모달
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">출입 승인 관리</h1>
-        <div className="flex items-center space-x-4">
+      <div className="flex justify-end items-center mb-6 space-x-4">
           <button
             onClick={() => setShowSearchInput(!showSearchInput)}
             className="w-16 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
@@ -150,7 +148,6 @@ const ApprovalsPage: React.FC = () => {
           >
             <ArrowPathIcon className="h-5 w-5" />
           </button>
-        </div>
       </div>
 
       {showSearchInput && (

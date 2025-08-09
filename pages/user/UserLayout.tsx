@@ -82,16 +82,23 @@ const UserLayout: React.FC = () => {
                                 <span className="font-semibold">홈</span>
                             </Link>
                         </li>
+                        {pathnames.length > 0 && (
+                            <li className="flex items-center space-x-3">
+                                <ChevronRightIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+                                <span className="font-semibold text-base sm:text-lg">현장출입관리</span>
+                            </li>
+                        )}
                         {pathnames.map((value, index) => {
                             const to = `/${pathnames.slice(0, index + 1).join('/')}`;
                             const isLast = index === pathnames.length - 1;
+                            const breadcrumbName = breadcrumbMap[value] || value;
                             return (
                                 <li key={to} className="flex items-center space-x-3">
                                     <ChevronRightIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
                                     {isLast ? (
-                                        <span className="font-bold text-gray-700 text-base sm:text-lg">{breadcrumbMap[value]}</span>
+                                        <span className="font-bold text-gray-700 text-base sm:text-lg">{breadcrumbName}</span>
                                     ) : (
-                                        <Link to={to} className="hover:text-power-blue-600 font-semibold text-base sm:text-lg">{breadcrumbMap[value]}</Link>
+                                        <Link to={to} className="hover:text-power-blue-600 font-semibold text-base sm:text-lg">{breadcrumbName}</Link>
                                     )}
                                 </li>
                             );

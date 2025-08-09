@@ -10,6 +10,7 @@ const ApplyPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    dateOfBirth: '',
     company: '',
     projectName: '',
     gender: '',
@@ -131,7 +132,7 @@ const ApplyPage: React.FC = () => {
   };
 
   const validateStep2 = () => {
-    return formData.name && formData.phone && formData.company && formData.projectName && formData.gender && formData.nationality && (!formData.vehicleOwner || (formData.vehicleOwnerName && formData.vehicleNumber && formData.vehicleType));
+    return formData.name && formData.phone && formData.dateOfBirth && formData.company && formData.projectName && formData.gender && formData.nationality && (!formData.vehicleOwner || (formData.vehicleOwnerName && formData.vehicleNumber && formData.vehicleType));
   }
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -158,7 +159,7 @@ const ApplyPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-md">
-      <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">출입 신청</h1>
+      
       
       <div className="w-full mb-6 sm:mb-8">
         <div className="flex justify-between items-center">
@@ -383,6 +384,20 @@ const ApplyPage: React.FC = () => {
                     onChange={handleInputChange} 
                     className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm sm:text-base py-3 px-4" 
                     placeholder="010-0000-0000" 
+                    required 
+                  />
+                </div>
+                <div>
+                  <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">생년월일 *</label>
+                  <p className="text-xs text-gray-500 mb-1">예: 860526 (1986년 5월 26일)</p>
+                  <input 
+                    type="text" 
+                    name="dateOfBirth" 
+                    id="dateOfBirth" 
+                    value={formData.dateOfBirth} 
+                    onChange={handleInputChange} 
+                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm sm:text-base py-3 px-4" 
+                    placeholder="YYMMDD" 
                     required 
                   />
                 </div>

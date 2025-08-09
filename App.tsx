@@ -7,6 +7,7 @@ import CheckStatusPage from './pages/user/CheckStatus';
 import SafetyInfoPage from './pages/user/SafetyInfo';
 import AdminLayout from './pages/admin/AdminLayout';
 import DashboardPage from './pages/admin/Dashboard';
+import GuardroomDashboardPage from './pages/guardroom/Dashboard';
 import ApprovalsPage from './pages/admin/Approvals';
 import ProjectsPage from './pages/admin/Projects';
 import CompaniesPage from './pages/admin/Companies';
@@ -24,6 +25,8 @@ const App: React.FC = () => {
           <Route path="/check" element={<CheckStatusPage />} />
           <Route path="/safety" element={<SafetyInfoPage />} />
         </Route>
+
+        <Route path="/guardroom/dashboard" element={<GuardroomDashboardPage />} />
 
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<DashboardPage />} />

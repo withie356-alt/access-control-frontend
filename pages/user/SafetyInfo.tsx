@@ -20,10 +20,7 @@ const SafetyInfoPage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-            <ShieldCheckIcon className="w-8 h-8 mr-3 text-power-blue-600" />
-            현장 안전 정보
-        </h1>
+        
         <p className="text-gray-600">
             모든 현장 인원의 안전을 위해 아래 내용을 반드시 숙지해주시기 바랍니다.
         </p>
