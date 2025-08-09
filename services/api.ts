@@ -236,6 +236,12 @@ const api = {
     console.log('API: Updating company', company);
     mockCompanies = mockCompanies.map(c => c.id === company.id ? company : c);
     return simulateDelay(company);
+  },
+  
+  deleteCompany: async (id: string): Promise<{id: string}> => {
+    console.log('API: Deleting company', id);
+    mockCompanies = mockCompanies.filter(c => c.id !== id);
+    return simulateDelay({ id });
   }
 };
 

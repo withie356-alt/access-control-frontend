@@ -46,6 +46,7 @@ export interface Company {
   id: string;
   name: string;
   department?: string;
+  manager?: string;
 }
 
 export interface Department {

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Company, Department } from '../../types';
+import { Company, Department, Manager } from '../../types';
 
 const CompanyModal: React.FC<{
   company: Company | null;
@@ -10,15 +10,30 @@ const CompanyModal: React.FC<{
   onSave: (company: Company) => void;
 }> = ({ company, departments, onClose, onSave }) => {
   const [formData, setFormData] = useState<Company | null>(company);
+  const [managers, setManagers] = useState<Manager[]>([]);
 
   useEffect(() => {
     setFormData(company);
   }, [company]);
-  
-  if(!formData) return null;
+
+  useEffect(() => {
+    if (formData?.department) {
+      const selectedDept = departments.find(d => d.name === formData.department);
+      setManagers(selectedDept ? selectedDept.managers : []);
+    } else {
+      setManagers([]);
+    }
+  }, [formData?.department, departments]);
+
+  if (!formData) return null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'department') {
+        setFormData({ ...formData, department: value, manager: '' }); // Reset manager when department changes
+    } else {
+        setFormData({ ...formData, [name]: value });
+    }
   };
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,7 +48,7 @@ const CompanyModal: React.FC<{
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium">업체명</label>
-            <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full mt-1 border-gray-300 rounded-md shadow-sm" required />
+            <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3" required />
           </div>
           <div>
             <label className="block text-sm font-medium">담당부서</label>
@@ -41,12 +56,29 @@ const CompanyModal: React.FC<{
               name="department" 
               value={formData.department || ''} 
               onChange={handleChange}
-              className="w-full mt-1 border-gray-300 rounded-md shadow-sm"
+              className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3"
             >
               <option value="">담당부서를 선택하세요</option>
               {departments.map(department => (
                 <option key={department.id} value={department.name}>
                   {department.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium">담당자</label>
+            <select 
+              name="manager" 
+              value={formData.manager || ''} 
+              onChange={handleChange}
+              className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3"
+              disabled={!formData.department}
+            >
+              <option value="">{formData.department ? '담당자를 선택하세요' : '담당부서를 먼저 선택하세요'}</option>
+              {managers.map(manager => (
+                <option key={manager.id} value={manager.name}>
+                  {manager.name} ({manager.role === 'general' ? '일반' : manager.role === 'safety' ? '안전관리자' : '관리자'})
                 </option>
               ))}
             </select>
@@ -66,7 +98,8 @@ const CompaniesPage: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [departmentSearchTerm, setDepartmentSearchTerm] = useState('');
+  const [showSearchInput, setShowSearchInput] = useState(false);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
 
@@ -100,62 +133,76 @@ const CompaniesPage: React.FC = () => {
         alert("저장에 실패했습니다.");
     }
   }
+
+  const handleDelete = async (id: string) => {
+    if(window.confirm('정말로 이 업체 정보를 삭제하시겠습니까?')) {
+        try {
+            await api.deleteCompany(id);
+            fetchData();
+        } catch(err) {
+            alert('삭제에 실패했습니다.');
+        }
+    }
+  }
   
-  const filteredCompanies = companies.filter(c => {
-    const matchesName = c.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDepartment = !departmentSearchTerm || 
-      (c.department && c.department.toLowerCase().includes(departmentSearchTerm.toLowerCase()));
-    return matchesName && matchesDepartment;
-  });
+  const filteredCompanies = React.useMemo(() => {
+    return companies.filter(company => {
+      const lowercasedFilter = searchTerm.toLowerCase();
+      const matchesName = company.name.toLowerCase().includes(lowercasedFilter);
+      const matchesDepartment = company.department?.toLowerCase().includes(lowercasedFilter) || false;
+      const matchesManager = company.manager?.toLowerCase().includes(lowercasedFilter) || false;
+      
+      return matchesName || matchesDepartment || matchesManager;
+    });
+  }, [companies, searchTerm]);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800">업체 관리</h1>
-      
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">업체명 검색</label>
-            <input
-              type="text"
-              placeholder="업체명을 입력하세요..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full rounded-md border-gray-300 shadow-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">담당부서 검색</label>
-            <input
-              type="text"
-              placeholder="담당부서를 입력하세요..."
-              value={departmentSearchTerm}
-              onChange={e => setDepartmentSearchTerm(e.target.value)}
-              className="w-full rounded-md border-gray-300 shadow-sm"
-            />
-          </div>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-800">업체 관리</h1>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => setShowSearchInput(!showSearchInput)}
+            className="w-16 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+          >
+            검색
+          </button>
         </div>
-        <p className="text-sm text-gray-500 mt-2">출입 신청 시 등록되지 않은 업체는 자동으로 목록에 추가됩니다.</p>
       </div>
+
+      {showSearchInput && (
+        <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+          <input
+            type="text"
+            placeholder="업체명, 담당부서, 담당자 검색..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full p-3 rounded-lg border-gray-300 shadow-sm"
+          />
+        </div>
+      )}
+      
+      
 
       <div className="bg-white rounded-lg shadow-md overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">업체명</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">담당부서</th>
-              <th className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">업체명</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">담당부서</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">담당자</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
-              <tr><td colSpan={3} className="text-center py-4">로딩 중...</td></tr>
+              <tr><td colSpan={4} className="text-center py-4">로딩 중...</td></tr>
             ) : filteredCompanies.length === 0 ? (
-              <tr><td colSpan={3} className="text-center py-4 text-gray-500">검색 결과가 없습니다.</td></tr>
+              <tr><td colSpan={4} className="text-center py-4 text-gray-500">검색 결과가 없습니다.</td></tr>
             ) : filteredCompanies.map(c => (
               <tr key={c.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{c.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">{c.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                   {c.department ? (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       {c.department}
@@ -164,8 +211,10 @@ const CompaniesPage: React.FC = () => {
                     <span className="text-gray-400">-</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => { setEditingCompany(c); setIsModalOpen(true); }} className="text-blue-600 hover:text-blue-900">수정</button>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{c.manager || '-'}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
+                  <button onClick={() => { setEditingCompany(c); setIsModalOpen(true); }} className="px-3 py-1 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50">수정</button>
+                  <button onClick={() => handleDelete(c.id)} className="px-3 py-1 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50">삭제</button>
                 </td>
               </tr>
             ))}
