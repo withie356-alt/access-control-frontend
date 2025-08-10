@@ -110,7 +110,20 @@ const CompaniesPage: React.FC = () => {
         api.getCompanies(),
         api.getDepartments?.() || Promise.resolve([])
       ]);
-      setCompanies(companiesData);
+      if (departmentsData.length > 0) {
+        const mockCompanies = companiesData.map((c, index) => {
+          const department = departmentsData[index % departmentsData.length];
+          const manager = department.managers[index % department.managers.length];
+          return {
+            ...c,
+            department: c.department || department.name,
+            manager: c.manager || manager.name,
+          }
+        });
+        setCompanies(mockCompanies);
+      } else {
+        setCompanies(companiesData);
+      }
       setDepartments(departmentsData);
     } catch (error) {
       console.error("Failed to fetch data:", error);

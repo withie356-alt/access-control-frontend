@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { Project, ApplicationStatus, Company } from '../../types';
+import { Project, Company, Department, Manager } from '../../types';
 
 const ApplyPage: React.FC = () => {
   const [step, setStep] = useState(1);
@@ -18,7 +17,6 @@ const ApplyPage: React.FC = () => {
     passportNumber: '',
     isSiteRepresentative: false,
     vehicleOwner: false,
-    vehicleOwnerName: '',
     vehicleNumber: '',
     vehicleType: '',
   });
@@ -26,11 +24,14 @@ const ApplyPage: React.FC = () => {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [managers, setManagers] = useState<Manager[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState('');
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [companySearchTerm, setCompanySearchTerm] = useState('');
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
   const [showNewCompanyForm, setShowNewCompanyForm] = useState(false);
-  const [newCompanyData, setNewCompanyData] = useState({ name: '', department: '' });
+  const [newCompanyData, setNewCompanyData] = useState({ name: '', department: '', manager: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -39,21 +40,49 @@ const ApplyPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [fetchedProjects, fetchedCompanies] = await Promise.all([
+        const [fetchedProjects, fetchedCompanies, fetchedDepartments] = await Promise.all([
           api.getProjects(),
-          api.getCompanies()
+          api.getCompanies(),
+          api.getDepartments(),
         ]);
         setProjects(fetchedProjects);
-        setCompanies(fetchedCompanies);
-        if (fetchedProjects.length > 0) {
-          setFormData(prev => ({ ...prev, projectName: fetchedProjects[0].name }));
+        if (fetchedDepartments.length > 0 && fetchedCompanies.length > 0) {
+            const mockCompanies = fetchedCompanies.map((c, index) => {
+                const department = fetchedDepartments[index % fetchedDepartments.length];
+                if (department.managers.length > 0) {
+                    const manager = department.managers[index % department.managers.length];
+                    return {
+                        ...c,
+                        department: c.department || department.name,
+                        manager: c.manager || manager.name,
+                    }
+                }
+                return {
+                    ...c,
+                    department: c.department || department.name,
+                }
+            });
+            setCompanies(mockCompanies);
+        } else {
+            setCompanies(fetchedCompanies);
         }
+        setDepartments(fetchedDepartments);
       } catch (err) {
         setError('데이터를 불러오는 데 실패했습니다.');
       }
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (selectedDepartment) {
+      const department = departments.find(d => d.id === selectedDepartment);
+      setManagers(department ? department.managers : []);
+      setNewCompanyData(prev => ({ ...prev, manager: '' })); // Reset manager when department changes
+    } else {
+      setManagers([]);
+    }
+  }, [selectedDepartment, departments]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -69,7 +98,7 @@ const ApplyPage: React.FC = () => {
       ...prev,
       vehicleOwner: e.target.checked,
       // 차량 소유자 체크 해제 시 차량 정보 초기화
-      ...(e.target.checked ? {} : { vehicleOwnerName: '', vehicleNumber: '', vehicleType: '' }),
+      ...(e.target.checked ? {} : { vehicleNumber: '', vehicleType: '' }),
     }));
   };
 
@@ -107,17 +136,31 @@ const ApplyPage: React.FC = () => {
     setShowNewCompanyForm(false);
   };
 
-  const handleNewCompanyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNewCompanyInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setNewCompanyData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleNewCompanyDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const departmentId = e.target.value;
+    setSelectedDepartment(departmentId);
+    const department = departments.find(d => d.id === departmentId);
+    setNewCompanyData(prev => ({
+        ...prev,
+        department: department ? department.name : '',
+        manager: '', // Reset manager selection
+    }));
+  };
+
   const handleAddNewCompany = () => {
-    if (newCompanyData.name.trim()) {
+    const managerName = managers.find(m => m.id === newCompanyData.manager)?.name;
+
+    if (newCompanyData.name.trim() && newCompanyData.department && managerName) {
       const newCompany: Company = {
         id: Date.now().toString(),
         name: newCompanyData.name,
-        department: newCompanyData.department || undefined
+        department: newCompanyData.department,
+        manager: managerName,
       };
       
       // 새 업체를 목록에 추가
@@ -127,12 +170,15 @@ const ApplyPage: React.FC = () => {
       setFormData(prev => ({ ...prev, company: newCompany.name }));
       setShowNewCompanyForm(false);
       setShowCompanyDropdown(false);
-      setNewCompanyData({ name: '', department: '' });
+      setNewCompanyData({ name: '', department: '', manager: '' });
+      setSelectedDepartment('');
+    } else {
+        setError("업체명, 담당부서, 관리자를 모두 선택해야 합니다.");
     }
   };
 
   const validateStep2 = () => {
-    return formData.name && formData.phone && formData.dateOfBirth && formData.company && formData.projectName && formData.gender && formData.nationality && (!formData.vehicleOwner || (formData.vehicleOwnerName && formData.vehicleNumber && formData.vehicleType));
+    return formData.name && formData.phone && formData.dateOfBirth && formData.company && formData.projectName && formData.gender && formData.nationality && (!formData.vehicleOwner || (formData.vehicleNumber && formData.vehicleType));
   }
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -222,7 +268,7 @@ const ApplyPage: React.FC = () => {
                   className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm sm:text-base py-3 px-4" 
                   required
                 >
-                  <option value="">공사계획을 선택하세요</option>
+                  <option value="">공사계획을 선택해주세요</option>
                   {projects.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                 </select>
               </div>
@@ -231,7 +277,7 @@ const ApplyPage: React.FC = () => {
               {selectedProject && (
                 <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
                   <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-3">선택된 공사 정보</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-xs sm:text-sm">
                     <div>
                       <span className="font-medium text-gray-600">공사명:</span>
                       <p className="text-gray-800 mt-1">{selectedProject.name}</p>
@@ -248,7 +294,7 @@ const ApplyPage: React.FC = () => {
                       <span className="font-medium text-gray-600">종료일:</span>
                       <p className="text-gray-800 mt-1">{new Date(selectedProject.endDate).toLocaleDateString('ko-KR')}</p>
                     </div>
-                    <div className="sm:col-span-2">
+                    <div className="col-span-2">
                       <span className="font-medium text-gray-600">공사내용:</span>
                       <p className="text-gray-800 mt-1 leading-relaxed">{selectedProject.description}</p>
                     </div>
@@ -295,7 +341,7 @@ const ApplyPage: React.FC = () => {
               {selectedCompany && (
                 <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
                   <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">선택된 업체 정보</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-xs sm:text-sm">
                     <div>
                       <span className="font-medium text-gray-600">업체명:</span>
                       <p className="text-gray-800 mt-1">{selectedCompany.name}</p>
@@ -306,11 +352,17 @@ const ApplyPage: React.FC = () => {
                         <p className="text-gray-800 mt-1">{selectedCompany.department}</p>
                       </div>
                     )}
+                    {selectedCompany.manager && (
+                      <div>
+                        <span className="font-medium text-gray-600">담당자:</span>
+                        <p className="text-gray-800 mt-1">{selectedCompany.manager}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* 새 업체 등록 폼 */}
+             {/* 새 업체 등록 폼 */}
               {showNewCompanyForm && (
                 <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                   <h3 className="text-sm sm:text-base font-semibold text-yellow-800 mb-3">검색된 업체가 없습니다. 새 업체를 등록하시겠습니까?</h3>
@@ -321,21 +373,39 @@ const ApplyPage: React.FC = () => {
                         type="text" 
                         name="name"
                         value={newCompanyData.name}
-                        onChange={handleNewCompanyChange}
+                        onChange={handleNewCompanyInputChange}
                         placeholder="업체명을 입력하세요"
                         className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-3 px-4" 
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">담당부서 (선택사항)</label>
-                      <input 
-                        type="text" 
+                      <label className="block text-sm font-medium text-gray-700 mb-1">담당부서 *</label>
+                      <select 
                         name="department"
-                        value={newCompanyData.department}
-                        onChange={handleNewCompanyChange}
-                        placeholder="담당부서를 입력하세요 (선택사항)"
-                        className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-3 px-4" 
-                      />
+                        value={selectedDepartment}
+                        onChange={handleNewCompanyDepartmentChange}
+                        className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-3 px-4"
+                      >
+                        <option value="">담당부서를 선택하세요</option>
+                        {departments.map(dep => (
+                          <option key={dep.id} value={dep.id}>{dep.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">관리자 *</label>
+                      <select 
+                        name="manager"
+                        value={newCompanyData.manager}
+                        onChange={handleNewCompanyInputChange}
+                        disabled={!selectedDepartment}
+                        className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-3 px-4 disabled:bg-gray-200"
+                      >
+                        <option value="">관리자를 선택하세요</option>
+                        {managers.map(man => (
+                          <option key={man.id} value={man.id}>{man.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="flex space-x-2">
                       <button 
@@ -495,19 +565,6 @@ const ApplyPage: React.FC = () => {
                 <h2 className="text-lg sm:text-xl font-semibold mb-4 text-orange-800">차량정보</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="vehicleOwnerName" className="block text-sm font-medium text-gray-700 mb-2">차량 소유자 이름 *</label>
-                    <input 
-                      type="text" 
-                      name="vehicleOwnerName" 
-                      id="vehicleOwnerName" 
-                      value={formData.vehicleOwnerName} 
-                      onChange={handleInputChange} 
-                      className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm sm:text-base py-3 px-4" 
-                      placeholder="차량 소유자 이름을 입력하세요"
-                      required 
-                    />
-                  </div>
-                  <div>
                     <label htmlFor="vehicleNumber" className="block text-sm font-medium text-gray-700 mb-2">차량번호 *</label>
                     <input 
                       type="text" 
@@ -521,23 +578,17 @@ const ApplyPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label htmlFor="vehicleType" className="block text-sm font-medium text-gray-700 mb-2">차량종류 *</label>
-                    <select 
+                    <label htmlFor="vehicleType" className="block text-sm font-medium text-gray-700 mb-2">차량이름 *</label>
+                    <input 
+                      type="text" 
                       name="vehicleType" 
                       id="vehicleType" 
                       value={formData.vehicleType} 
                       onChange={handleInputChange} 
                       className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm sm:text-base py-3 px-4" 
-                      required
-                    >
-                      <option value="">차량종류를 선택하세요</option>
-                      <option value="승용차">승용차</option>
-                      <option value="승합차">승합차</option>
-                      <option value="화물차">화물차</option>
-                      <option value="특수차">특수차</option>
-                      <option value="이륜차">이륜차</option>
-                      <option value="기타">기타</option>
-                    </select>
+                      placeholder="예: 산타페"
+                      required 
+                    />
                   </div>
                 </div>
               </div>
