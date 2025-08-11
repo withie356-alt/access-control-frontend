@@ -13,7 +13,8 @@ const AdminLayout: React.FC = () => {
         'approvals': '출입 승인 관리',
         'projects': '공사 관리',
         'companies': '업체 관리',
-        'departments': '담당부서 관리'
+        'departments': '담당부서 관리',
+        'users': 'User관리'
     };
 
     const navLinks = [
@@ -22,6 +23,7 @@ const AdminLayout: React.FC = () => {
         { to: '/admin/projects', label: '공사 관리' },
         { to: '/admin/companies', label: '업체 관리' },
         { to: '/admin/departments', label: '담당부서 관리' },
+        { to: '/admin/users', label: 'User관리' },
     ];
 
     return (
@@ -73,7 +75,7 @@ const AdminLayout: React.FC = () => {
                 </nav>
             </header>
             
-            <div className="bg-gray-50 border-b border-gray-200">
+            <div className="bg-gray-50 border-b border-gray-200 sticky top-14 sm:top-16 z-40">
                 <div className="container mx-auto px-2 sm:px-4 lg:px-8 py-3">
                     <ol className="flex items-center space-x-3 text-base sm:text-lg text-gray-500">
                         <li>

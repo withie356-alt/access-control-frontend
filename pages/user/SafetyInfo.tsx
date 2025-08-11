@@ -1,21 +1,19 @@
-
 import React from 'react';
 import { ShieldCheckIcon } from '../../components/icons';
 
 const SafetyInfoPage: React.FC = () => {
     
   const safetyMaterials = [
-    { name: '일반 안전 수칙 (v1.2)', url: '#' },
-    { name: '물질안전보건자료 (MSDS) - 페인트', url: '#' },
-    { name: '물질안전보건자료 (MSDS) - 시멘트', url: '#' },
-    { name: '고소작업 안전 가이드라인', url: '#' },
+    { name: '01.화기작업 안전', url: '/01.화기작업 안전.pdf' },
+    { name: '02.밀폐공간작업안전', url: '/02.밀폐공간작업안전.pdf' },
+    { name: '03.정전작업 안전', url: '/03.정전작업 안전.pdf' },
+    { name: '04.굴착작업 안전', url: '/04.굴착작업 안전.pdf' },
+    { name: '05-1. 고소작업자 추락방지장치 점검', url: '/05-1. 고소작업자 추락방지장치 점검.pdf' },
+    { name: '05-2. 하역운반(고소작업대)', url: '/05-2. 하역운반(고소작업대).pdf' },
+    { name: '06-1. 천장 크레인 안전작업', url: '/06-1. 천장 크레인 안전작업.pdf' },
+    { name: '06-2. 이동식 크레인', url: '/06-2. 이동식 크레인.pdf' },
+    { name: 'MSDS', url: '/MSDS.pdf' },
   ];
-  
-  const handleDownload = (e: React.MouseEvent, url: string) => {
-    e.preventDefault();
-    alert('실제 환경에서는 파일이 다운로드됩니다.');
-    console.log(`Downloading from ${url}`);
-  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -39,25 +37,7 @@ const SafetyInfoPage: React.FC = () => {
            </ul>
       </div>
 
-      <div className="bg-white p-8 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">안전 교육 이수</h2>
-        <div className="flex flex-col sm:flex-row items-center gap-6">
-          <div className="flex-shrink-0">
-             <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=safety-training" alt="Safety Training QR Code" className="w-36 h-36 rounded-lg" />
-          </div>
-          <div>
-            <p className="text-gray-700">
-              현장 출입 전, 위의 QR 코드를 스캔하여 온라인 안전 교육을 이수해야 합니다.
-            </p>
-            <p className="mt-2 text-sm text-gray-500">
-              교육은 약 10분 정도 소요되며, 이수 완료 후 출입이 가능합니다.
-            </p>
-            <button className="mt-4 px-4 py-2 bg-power-blue-600 text-white rounded-md hover:bg-power-blue-700">
-              안전 교육 바로가기
-            </button>
-          </div>
-        </div>
-      </div>
+      
       
       <div className="bg-white p-8 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4">안전 관련 자료</h2>
@@ -65,13 +45,25 @@ const SafetyInfoPage: React.FC = () => {
           {safetyMaterials.map((material, index) => (
             <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-md border">
               <span className="text-gray-800">{material.name}</span>
-              <a 
-                href={material.url}
-                onClick={(e) => handleDownload(e, material.url)}
-                className="text-sm text-power-blue-600 hover:underline font-medium"
-              >
-                다운로드
-              </a>
+              <div>
+                <a
+                  href={material.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-power-blue-600 hover:underline font-medium mr-4"
+                >
+                  보기
+                </a>
+                <a 
+                  href={material.url}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-power-blue-600 hover:underline font-medium"
+                >
+                  다운로드
+                </a>
+              </div>
             </div>
           ))}
         </div>
