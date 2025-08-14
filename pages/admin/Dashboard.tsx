@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from '../../services/api';
-import { DailyStats } from '../../types';
-
-import { AccessApplication, DailyStats } from '../../types';
+import { AccessApplication, DailyStats, ApplicationStatus } from '../../types';
 
 // Person 타입
 interface Person extends AccessApplication {
@@ -49,7 +47,7 @@ const DashboardPage: React.FC = () => {
       projectName: 'A동 신축 공사',
       agreedOn: new Date('2024-08-08T10:00:00Z').toISOString(),
       signature: 'base64string',
-      status: '대기',
+      status: ApplicationStatus.Pending,
       createdAt: new Date('2024-08-08T10:00:00Z').toISOString(),
       startDate: '2024-01-01',
       endDate: '2024-12-31',
@@ -73,7 +71,7 @@ const DashboardPage: React.FC = () => {
       projectName: 'B동 리모델링',
       agreedOn: new Date('2024-08-07T09:00:00Z').toISOString(),
       signature: 'base64string',
-      status: '완료',
+      status: ApplicationStatus.Approved,
       createdAt: new Date('2024-08-07T09:00:00Z').toISOString(),
       startDate: '2024-03-15',
       endDate: '2024-06-30',
@@ -100,7 +98,7 @@ const DashboardPage: React.FC = () => {
       projectName: '안전 점검',
       agreedOn: new Date('2024-08-06T07:30:00Z').toISOString(),
       signature: 'base64string',
-      status: '반려',
+      status: ApplicationStatus.Rejected,
       createdAt: new Date('2024-08-06T07:30:00Z').toISOString(),
       startDate: '2024-07-01',
       endDate: '2024-07-15',
@@ -124,7 +122,7 @@ const DashboardPage: React.FC = () => {
       projectName: 'C동 리모델링',
       agreedOn: new Date('2024-08-08T08:30:00Z').toISOString(),
       signature: 'base64string',
-      status: '대기',
+      status: ApplicationStatus.Pending,
       createdAt: new Date('2024-08-08T08:30:00Z').toISOString(),
       startDate: '2024-08-01',
       endDate: '2024-09-30',
@@ -151,7 +149,7 @@ const DashboardPage: React.FC = () => {
       projectName: 'D동 신축',
       agreedOn: new Date('2024-08-07T09:30:00Z').toISOString(),
       signature: 'base64string',
-      status: '완료',
+      status: ApplicationStatus.Approved,
       createdAt: new Date('2024-08-07T09:30:00Z').toISOString(),
       startDate: '2024-07-01',
       endDate: '2024-08-15',
@@ -175,7 +173,7 @@ const DashboardPage: React.FC = () => {
       projectName: 'E동 증축',
       agreedOn: new Date('2024-08-08T10:00:00Z').toISOString(),
       signature: 'base64string',
-      status: '대기',
+      status: ApplicationStatus.Pending,
       createdAt: new Date('2024-08-08T10:00:00Z').toISOString(),
       startDate: '2024-08-10',
       endDate: '2024-09-10',
@@ -199,7 +197,7 @@ const DashboardPage: React.FC = () => {
       projectName: 'F동 신축',
       agreedOn: new Date('2024-08-07T11:00:00Z').toISOString(),
       signature: 'base64string',
-      status: '완료',
+      status: ApplicationStatus.Approved,
       createdAt: new Date('2024-08-07T11:00:00Z').toISOString(),
       startDate: '2024-07-20',
       endDate: '2024-08-05',
@@ -226,7 +224,7 @@ const DashboardPage: React.FC = () => {
       projectName: 'G동 리모델링',
       agreedOn: new Date('2024-08-06T07:00:00Z').toISOString(),
       signature: 'base64string',
-      status: '완료',
+      status: ApplicationStatus.Approved,
       createdAt: new Date('2024-08-06T07:00:00Z').toISOString(),
       startDate: '2024-06-01',
       endDate: '2024-06-30',
@@ -250,7 +248,7 @@ const DashboardPage: React.FC = () => {
       projectName: 'H동 신축',
       agreedOn: new Date('2024-08-08T08:45:00Z').toISOString(),
       signature: 'base64string',
-      status: '대기',
+      status: ApplicationStatus.Pending,
       createdAt: new Date('2024-08-08T08:45:00Z').toISOString(),
       startDate: '2024-08-05',
       endDate: '2024-09-15',
@@ -274,7 +272,7 @@ const DashboardPage: React.FC = () => {
       projectName: 'I동 증축',
       agreedOn: new Date('2024-08-07T09:15:00Z').toISOString(),
       signature: 'base64string',
-      status: '완료',
+      status: ApplicationStatus.Approved,
       createdAt: new Date('2024-08-07T09:15:00Z').toISOString(),
       startDate: '2024-07-10',
       endDate: '2024-07-30',
@@ -301,7 +299,7 @@ const DashboardPage: React.FC = () => {
       projectName: 'J동 신축',
       agreedOn: new Date('2024-08-08T08:00:00Z').toISOString(),
       signature: 'base64string',
-      status: '대기',
+      status: ApplicationStatus.Pending,
       createdAt: new Date('2024-08-08T08:00:00Z').toISOString(),
       startDate: '2024-08-01',
       endDate: '2024-09-30',
