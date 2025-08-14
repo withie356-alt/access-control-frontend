@@ -1,6 +1,17 @@
 import { supabase } from './supabase';
 import { AccessApplication, ApplicationStatus, Company, Project, DailyStats, StatusStats, Department, FullAccessApplication, AccessLog, Manager } from '../types';
 
+// Helper function to format date for QR code
+const formatQrDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const seconds = date.getSeconds().toString().padStart(2, '0');
+  return `${year}${month}${day}${hours}${minutes}${seconds}`;
+};
+
 const api = {
   getProjects: async (): Promise<Project[]> => {
     console.log('API: Fetching projects with manager and department info');
@@ -64,6 +75,7 @@ const api = {
       nationality: applicationData.nationality,
       passport_number: applicationData.passport_number,
       company_name: applicationData.company_name,
+      company_id: applicationData.company_id, // Add this line
       project_id: applicationData.project_id,
       visit_date: applicationData.visit_date,
       is_site_representative: applicationData.is_site_representative,
@@ -122,23 +134,8 @@ const api = {
       .from('access_applications')
       .select(`
         *,
-        projects (
-          name,
-          description,
-          start_date,
-          end_date,
-          managers (
-            name,
-            departments (
-              name
-            )
-          )
-        ),
-        access_logs (
-          qrid,
-          event_type,
-          timestamp
-        )
+        projects(*, managers(name, phone, department_id, departments(name))),
+        companies(*, departments(name), managers(name, phone))
       `)
       .order('created_at', { ascending: false });
 
@@ -149,36 +146,26 @@ const api = {
 
     // Process fetched data to match FullAccessApplication structure
     const fullApplications: FullAccessApplication[] = data.map((app: any) => {
-      const checkInLog = app.access_logs.find((log: any) => log.event_type === 'check_in');
-      const checkOutLog = app.access_logs.find((log: any) => log.event_type === 'check_out');
+      const checkInLog = app.access_logs ? app.access_logs.find((log: any) => log.event_type === 'check_in') : undefined;
+      const checkOutLog = app.access_logs ? app.access_logs.find((log: any) => log.event_type === 'check_out') : undefined;
 
       return {
         ...app,
-        applicant_name: app.applicant_name,
-        applicant_phone: app.applicant_phone,
-        company_name: app.company_name,
-        project_id: app.project_id,
-        visit_date: app.visit_date,
-        is_site_representative: app.is_site_representative,
-        is_vehicle_owner: app.is_vehicle_owner,
-        vehicle_number: app.vehicle_number,
-        vehicle_type: app.vehicle_type,
-        agreed_on: app.agreed_on,
-        signature: app.signature,
-        qrid: app.qrid,
-        status: app.status,
-        created_at: app.created_at,
-        checkInTime: checkInLog ? new Date(checkInLog.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : undefined,
-        checkOutTime: checkOutLog ? new Date(checkOutLog.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : undefined,
         projectName: app.projects?.name,
         projectDescription: app.projects?.description,
         projectStartDate: app.projects?.start_date,
         projectEndDate: app.projects?.end_date,
         projectManagerName: app.projects?.managers?.name,
-        departmentName: app.projects?.managers?.departments?.name,
-        // companyContactPerson and companyPhoneNumber are not directly joined here.
-        // If needed, they would require a separate fetch or a more complex join if company_name was a foreign key.
-        // For now, they will be undefined or require manual mapping if company_name is used to look up.
+        projectManagerDepartmentName: app.projects?.managers?.departments?.name,
+        projectManagerPhone: app.projects?.managers?.phone,
+        
+        companyName: app.companies?.name || app.company_name, // Use company.name if joined, else original
+        companyDepartmentName: app.companies?.departments?.name,
+        companyContactPerson: app.companies?.managers?.name || app.companies?.contact_person, // Prioritize manager name from join
+        companyPhoneNumber: app.companies?.managers?.phone || app.companies?.phone_number, // Prioritize manager phone from join
+
+        checkInTime: checkInLog ? new Date(checkInLog.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : undefined,
+        checkOutTime: checkOutLog ? new Date(checkOutLog.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : undefined,
       };
     });
 
@@ -187,20 +174,58 @@ const api = {
 
   approveApplications: async (ids: string[]): Promise<AccessApplication[]> => {
     console.log('API: Approving applications', ids);
-    const updates = ids.map(id => ({ id, status: ApplicationStatus.Approved, qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=approved-${id}` }));
-    const { data, error } = await supabase.from('access_applications').upsert(updates).select();
 
-    if (error) {
-      console.error('Error approving applications:', error);
-      throw error;
+    const approvedApplications: AccessApplication[] = [];
+
+    for (const id of ids) {
+      // 1. Get application details to retrieve applicant_name
+      const { data: application, error: fetchError } = await supabase
+        .from('access_applications')
+        .select('id, applicant_name')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) {
+        console.error(`Error fetching application ${id} for QR code generation:`, fetchError);
+        continue; // Skip to next application
+      }
+
+      if (!application) {
+        console.warn(`Application with ID ${id} not found.`);
+        continue;
+      }
+
+      // 2. Generate QR text
+      const qrDate = formatQrDate(new Date());
+      const qrText = `${application.id}+${application.applicant_name}+${qrDate}`;
+      console.log(`Generated QR text for ${application.id}: ${qrText}`);
+
+      // 3. Update application status and qrid
+      const { data, error } = await supabase.from('access_applications')
+        .update({ status: ApplicationStatus.Approved, qrid: qrText })
+        .eq('id', id)
+        .select();
+
+      if (error) {
+        console.error(`Error approving and updating QR ID for application ${id}:`, error);
+        throw error; // Re-throw to indicate failure for this batch
+      }
+
+      if (data && data.length > 0) {
+        approvedApplications.push(data[0] as AccessApplication);
+      }
     }
-    return data || [];
+
+    return approvedApplications;
   },
 
   rejectApplications: async (ids: string[]): Promise<AccessApplication[]> => {
     console.log('API: Rejecting applications', ids);
-    const updates = ids.map(id => ({ id, status: ApplicationStatus.Rejected, qrCodeUrl: undefined }));
-    const { data, error } = await supabase.from('access_applications').upsert(updates).select();
+    // Use update().in() to update only status for selected IDs
+    const { data, error } = await supabase.from('access_applications')
+      .update({ status: ApplicationStatus.Rejected })
+      .in('id', ids)
+      .select();
 
     if (error) {
       console.error('Error rejecting applications:', error);
@@ -364,12 +389,28 @@ const api = {
 
   addCompany: async (companyData: Omit<Company, 'id' | 'created_at'>): Promise<Company> => {
     console.log('API: Adding company', companyData);
-    const { data, error } = await supabase.from('companies').insert([companyData]).select();
+    const { data, error } = await supabase.from('companies').insert([companyData]).select(`
+      *,
+      departments (
+        name
+      ),
+      managers (
+        name,
+        phone
+      )
+    `);
     if (error) {
       console.error('Error adding company:', error);
       throw error;
     }
-    return data[0] as Company;
+    // API로부터 반환된 데이터를 필요한 형태로 가공
+    return data.map((company: any) => ({
+      ...company,
+      department_name: company.departments ? company.departments.name : '-',
+      manager_name: company.managers ? company.managers.name : '-',
+      contact_person: company.managers ? company.managers.name : company.contact_person || '',
+      phone_number: company.managers ? company.managers.phone : company.phone_number || '',
+    }))[0] || {} as Company;
   },
 
   updateCompany: async (company: Company): Promise<Company> => {

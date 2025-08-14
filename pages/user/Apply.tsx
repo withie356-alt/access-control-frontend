@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { Project, Company, Department, Manager } from '../../types';
+import { AccessApplication } from '../../types'; // Added AccessApplication import
 
 const ApplyPage: React.FC = () => {
   const [step, setStep] = useState(1);
@@ -101,6 +102,9 @@ const ApplyPage: React.FC = () => {
       setFilteredCompanies(filtered);
       setShowCompanyDropdown(true);
       setShowNewCompanyForm(filtered.length === 0);
+      if (filtered.length === 0) {
+        setNewCompanyData(prev => ({ ...prev, name: searchTerm }));
+      }
     } else {
       setShowCompanyDropdown(false);
       setShowNewCompanyForm(false);
@@ -133,26 +137,41 @@ const ApplyPage: React.FC = () => {
     }));
   };
 
-  const handleAddNewCompany = () => {
-    const managerName = managers.find(m => m.id === newCompanyData.manager)?.name;
+  const handleAddNewCompany = async () => {
+    const managerId = newCompanyData.manager;
+    const department = departments.find(d => d.id === selectedDepartment);
+    const manager = managers.find(m => m.id === managerId);
 
-    if (newCompanyData.name.trim() && newCompanyData.department && managerName) {
-      const newCompany: Company = {
-        id: Date.now().toString(),
-        name: newCompanyData.name,
-        department: newCompanyData.department,
-        manager: managerName,
-      };
-      
-      // 새 업체를 목록에 추가
-      setCompanies(prev => [...prev, newCompany]);
-      setSelectedCompany(newCompany);
-      setCompanySearchTerm(newCompany.name);
-      setFormData(prev => ({ ...prev, company: newCompany.name }));
-      setShowNewCompanyForm(false);
-      setShowCompanyDropdown(false);
-      setNewCompanyData({ name: '', department: '', manager: '' });
-      setSelectedDepartment('');
+    if (newCompanyData.name.trim() && department && manager) {
+      try {
+        setIsLoading(true);
+        setError('');
+
+        const newCompanyPayload = {
+          name: newCompanyData.name,
+          department_id: department.id,
+          manager_id: manager.id,
+          contact_person: manager.name,
+          phone_number: manager.phone,
+        };
+
+        const addedCompany = await api.addCompany(newCompanyPayload);
+        
+        // 새 업체를 목록에 추가 (API에서 반환된 실제 객체로)
+        setCompanies(prev => [...prev, addedCompany]);
+        setSelectedCompany(addedCompany);
+        setCompanySearchTerm(addedCompany.name);
+        setFormData(prev => ({ ...prev, company: addedCompany.name }));
+        setShowNewCompanyForm(false);
+        setShowCompanyDropdown(false);
+        setNewCompanyData({ name: '', department: '', manager: '' });
+        setSelectedDepartment('');
+      } catch (err) {
+        console.error("업체 등록 실패:", err);
+        setError("업체 등록에 실패했습니다. 다시 시도해주세요.");
+      } finally {
+        setIsLoading(false);
+      }
     } else {
         setError("업체명, 담당부서, 관리자를 모두 선택해야 합니다.");
     }
@@ -173,6 +192,7 @@ const ApplyPage: React.FC = () => {
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('handleSubmit called');
     e.preventDefault();
     if (!validateStep2()) {
       setError('모든 필수 항목을 입력해주세요.');
@@ -182,13 +202,28 @@ const ApplyPage: React.FC = () => {
     setError('');
     try {
       const submissionData = {
-        ...formData,
-        agreedOn: new Date().toISOString(),
+        applicant_name: formData.name,
+        applicant_phone: formData.phone,
+        gender: formData.gender,
+        nationality: formData.nationality,
+        passport_number: formData.passportNumber,
+        company_name: selectedCompany?.name || formData.company, // Fallback to formData.company if selectedCompany is null
+        company_id: selectedCompany?.id, // Use ID from selectedCompany
+        project_id: selectedProject?.id, // Use ID from selectedProject
+        visit_date: new Date().toISOString().split('T')[0], // Assuming visit_date is today
+        is_site_representative: formData.isSiteRepresentative,
+        is_vehicle_owner: formData.vehicleOwner,
+        vehicle_number: formData.vehicleNumber,
+        vehicle_type: formData.vehicleType,
+        agreed_on: new Date().toISOString(),
+        // signature and qrid are not collected in this form, so omit them or add placeholders if required by DB
       };
-      await api.submitApplication(submissionData);
+      
+      await api.submitApplication(submissionData as Omit<AccessApplication, 'id' | 'status' | 'created_at' | 'qrCodeUrl'>);
       alert('출입 신청이 성공적으로 완료되었습니다. 신청 내역 조회 페이지로 이동합니다.');
       navigate('/check');
     } catch (err) {
+      console.error("신청 제출 실패:", err);
       setError('신청 제출에 실패했습니다. 다시 시도해주세요.');
       setIsLoading(false);
     }
@@ -260,7 +295,26 @@ const ApplyPage: React.FC = () => {
                   required
                 >
                   <option value="">공사계획을 선택해주세요</option>
-                  {projects.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                  {projects.map(p => {
+                    const startDate = new Date(p.start_date);
+                    const endDate = new Date(p.end_date);
+                    const startYear = startDate.getFullYear();
+                    const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+                    const startDay = String(startDate.getDate()).padStart(2, '0');
+                    const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+                    const endDay = String(endDate.getDate()).padStart(2, '0');
+                    const formattedPeriod = p.start_date && p.end_date 
+                      ? ` (${startYear}/${startMonth}/${startDay}~${endMonth}/${endDay})`
+                      : '';
+                    
+                    return (
+                      <option key={p.id} value={p.name}>
+                        {p.name}
+                        {formattedPeriod}
+                        {p.department_name && ` | 부서: ${p.department_name}`}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
@@ -340,16 +394,16 @@ const ApplyPage: React.FC = () => {
                     <div className="col-span-2">
                       <p className="text-gray-800 font-bold text-base">{selectedCompany.name}</p>
                     </div>
-                    {selectedCompany.department_id && (
+                    {selectedCompany.department_name && (
                       <div>
                         <span className="font-medium text-gray-600">담당부서:</span>
-                        <p className="text-gray-800 mt-1">{getDepartmentName(selectedCompany.department_id)}</p>
+                        <p className="text-gray-800 mt-1">{selectedCompany.department_name}</p>
                       </div>
                     )}
-                    {selectedCompany.manager_id && (
+                    {selectedCompany.manager_name && (
                       <div>
                         <span className="font-medium text-gray-600">담당자:</span>
-                        <p className="text-gray-800 mt-1">{getManagerName(selectedCompany.manager_id)}</p>
+                        <p className="text-gray-800 mt-1">{selectedCompany.manager_name}</p>
                       </div>
                     )}
                   </div>
@@ -593,7 +647,7 @@ const ApplyPage: React.FC = () => {
               <button type="button" onClick={() => setStep(1)} className="w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-800 text-sm sm:text-base rounded-lg hover:bg-gray-300 font-medium">
                 이전
               </button>
-              <button type="submit" disabled={isLoading || !validateStep2()} onClick={() => setStep(3)} className="w-full sm:w-auto px-6 py-3 bg-power-blue-600 text-white text-sm sm:text-base rounded-lg hover:bg-power-blue-700 disabled:bg-gray-400 font-medium">
+              <button type="submit" disabled={isLoading || !validateStep2()} className="w-full sm:w-auto px-6 py-3 bg-power-blue-600 text-white text-sm sm:text-base rounded-lg hover:bg-power-blue-700 disabled:bg-gray-400 font-medium">
                 {isLoading ? '제출 중...' : '신청 완료'}
               </button>
             </div>

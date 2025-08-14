@@ -13,6 +13,7 @@ export interface AccessApplication {
   nationality?: string;
   passport_number?: string;
   company_name?: string;
+  company_id?: string; // UUID
   project_id?: string; // UUID
   visit_date: string; // DATE
   status: ApplicationStatus;
@@ -35,9 +36,13 @@ export interface FullAccessApplication extends AccessApplication {
   projectStartDate?: string; // From projects.start_date
   projectEndDate?: string; // From projects.end_date
   projectManagerName?: string; // From managers.name
-  companyContactPerson?: string; // From companies.contact_person
-  companyPhoneNumber?: string; // From companies.phone_number
+  projectManagerDepartmentName?: string; // From managers -> departments
+  companyName?: string; // From companies.name
+  companyDepartmentName?: string; // From companies -> departments
+  companyContactPerson?: string; // From companies.contact_person (or managers.name from company join)
+  companyPhoneNumber?: string; // From companies.phone_number (or managers.phone from company join)
   departmentName?: string; // From departments.name
+  projectManagerPhone?: string; // From managers.phone
 }
 
 export interface Project {

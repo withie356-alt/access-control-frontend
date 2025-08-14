@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import api from '../../services/api';
 import { AccessApplication, ApplicationStatus } from '../../types';
 
@@ -109,10 +110,12 @@ const CheckStatusPage: React.FC = () => {
                             ) : (
                                 <div className="text-center p-4 bg-green-50 rounded-lg">
                                     <p className="font-semibold text-green-800 mb-2">출입 QR 코드</p>
-                                    {app.qrCodeUrl ? (
-                                        <img src={app.qrCodeUrl} alt="QR Code" className="max-w-xs mx-auto border border-gray-300 p-2 rounded-md" />
+                                    {app.qrid ? (
+                                        <div className="flex justify-center p-2 border border-gray-300 rounded-md">
+                                            <QRCodeSVG value={app.qrid} size={256} level="H" includeMargin={true} />
+                                        </div>
                                     ) : (
-                                        <p className="text-sm text-red-700">QR 코드를 불러올 수 없습니다.</p>
+                                        <p className="text-sm text-red-700">QR 코드를 생성할 수 없습니다. (QR ID 없음)</p>
                                     )}
                                 </div>
                             )}

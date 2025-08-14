@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../../services/api';
 import { AccessApplication, ApplicationStatus } from '../../types';
 import { ArrowPathIcon } from '../../components/icons';
@@ -12,23 +12,24 @@ const ApprovalsPage: React.FC = () => {
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [detailModal, setDetailModal] = useState<{open: boolean, app: AccessApplication | null}>({open: false, app: null});
-  const [editModal, setEditModal] = useState<{open: boolean, app: AccessApplication | null}>({open: false, app: null});
+  const [editModal, setEditModal] = useState<{open: boolean, app: FullAccessApplication | null}>({open: false, app: null});
 
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.getAllApplications();
+      const data = await api.getAccessApplications();
       setApplications(data);
     } catch (error) {
-      console.error("Failed to fetch applications:", error);
+      console.error('Failed to fetch applications:', error);
+      // Optionally, set an error state here
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchApplications();
-  }, []);
+  }, [fetchApplications]);
 
   const handleSelection = (id: string) => {
     setSelected(prev =>
@@ -86,9 +87,9 @@ const ApprovalsPage: React.FC = () => {
     return applications
       .filter(app => statusFilter === 'all' || app.status === statusFilter)
       .filter(app => 
-        app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.projectName.toLowerCase().includes(searchTerm.toLowerCase())
+        app.applicant_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.projectName?.toLowerCase().includes(searchTerm.toLowerCase())
       );
   }, [applications, searchTerm, statusFilter]);
 
@@ -118,7 +119,12 @@ const ApprovalsPage: React.FC = () => {
       [ApplicationStatus.Approved]: "bg-green-100 text-green-800",
       [ApplicationStatus.Rejected]: "bg-red-100 text-red-800",
     };
-    return <span className={`${baseClasses} ${statusClasses[status]}`}>{status}</span>;
+    const statusText = {
+      [ApplicationStatus.Pending]: "승인 대기",
+      [ApplicationStatus.Approved]: "승인 완료",
+      [ApplicationStatus.Rejected]: "반려",
+    };
+    return <span className={`${baseClasses} ${statusClasses[status]}`}>{statusText[status]}</span>;
   };
 
   // 카드형 UI + 모달
@@ -192,13 +198,13 @@ const ApprovalsPage: React.FC = () => {
             ) : filteredApplications.map(app => (
           <div key={app.id} className="rounded-xl shadow-md bg-white p-5 flex flex-col gap-2 border border-gray-100">
             <div className="flex items-center justify-between mb-2">
-              <div className="font-bold text-lg text-gray-800">{app.name}</div>
+              <div className="font-bold text-lg text-gray-800">{app.applicant_name}</div>
                   <StatusBadge status={app.status} />
             </div>
-            <div className="text-sm text-gray-600">업체: <span className="font-medium text-gray-800">{app.company}</span></div>
-            <div className="text-sm text-gray-600">공사명: <span className="font-medium text-gray-800">{app.projectName}</span></div>
-            {app.department && <div className="text-sm text-gray-600">담당부서: <span className="font-medium text-gray-800">{app.department}</span></div>}
-            <div className="text-xs text-gray-400 mt-1">신청일: {new Date(app.createdAt).toLocaleString()}</div>
+            <div className="text-sm text-gray-600">업체: <span className="font-medium text-gray-800">{app.companyName || app.company_name || 'N/A'}</span></div>
+            <div className="text-sm text-gray-600">공사명: <span className="font-medium text-gray-800">{app.projectName || 'N/A'}</span></div>
+            {app.companyDepartmentName && <div className="text-sm text-gray-600">담당부서: <span className="font-medium text-gray-800">{app.companyDepartmentName}</span></div>}
+            <div className="text-xs text-gray-400 mt-1">신청일: {new Date(app.created_at).toLocaleString()}</div>
             
             <div className="flex flex-wrap gap-2 mt-3">
               <button onClick={() => setDetailModal({open: true, app})} className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">
@@ -265,21 +271,26 @@ const ApprovalsPage: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="font-semibold text-gray-600">성명:</p>
-                    <p className="text-gray-800">{detailModal.app.name}</p>
+                    <p className="text-gray-800">{detailModal.app.applicant_name}</p>
                   </div>
                   <div>
                     <p className="font-semibold text-gray-600">연락처:</p>
-                    <p className="text-gray-800">{detailModal.app.phone}</p>
+                    <p className="text-gray-800">{detailModal.app.applicant_phone}</p>
                   </div>
                   <div>
                     <p className="font-semibold text-gray-600">성별:</p>
-                    <p className="text-gray-800">{detailModal.app.gender}</p>
+                    <p className="text-gray-800">{detailModal.app.gender || 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-800">국적:</p>
-                    <p className="text-gray-800">{detailModal.app.nationality}</p>
+                    <p className="font-semibold text-gray-600">국적:</p>
+                    <p className="text-gray-800">{detailModal.app.nationality || 'N/A'}</p>
                   </div>
-                  
+                  {detailModal.app.passport_number && (
+                    <div className="col-span-2">
+                      <p className="font-semibold text-gray-600">여권번호:</p>
+                      <p className="text-gray-800">{detailModal.app.passport_number}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -287,7 +298,7 @@ const ApprovalsPage: React.FC = () => {
               <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
                 <h4 className="text-lg font-semibold text-gray-800 mb-2">역할 정보</h4>
                 <div className="grid grid-cols-2 gap-4">
-                  {detailModal.app.isSiteRepresentative && (
+                  {detailModal.app.is_site_representative && (
                     <div className="col-span-2">
                       <p className="text-gray-800">
                         <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
@@ -296,7 +307,7 @@ const ApprovalsPage: React.FC = () => {
                       </p>
                     </div>
                   )}
-                  {detailModal.app.vehicleOwner && (
+                  {detailModal.app.is_vehicle_owner && (
                     <div className="col-span-2">
                       <p className="text-gray-800">
                         <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
@@ -306,11 +317,11 @@ const ApprovalsPage: React.FC = () => {
                       <div className="grid grid-cols-2 gap-4 mt-2 p-2 border border-gray-200 rounded-lg">
                         <div>
                           <p className="font-semibold text-gray-600">차량번호:</p>
-                          <p className="text-gray-800">{detailModal.app.vehicleNumber}</p>
+                          <p className="text-gray-800">{detailModal.app.vehicle_number || 'N/A'}</p>
                         </div>
                         <div>
                           <p className="font-semibold text-gray-600">차량종류:</p>
-                          <p className="text-gray-800">{detailModal.app.vehicleType}</p>
+                          <p className="text-gray-800">{detailModal.app.vehicle_type || 'N/A'}</p>
                         </div>
                       </div>
                     </div>
@@ -324,42 +335,46 @@ const ApprovalsPage: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="font-semibold text-gray-600">공사명:</p>
-                    <p className="text-gray-800">{detailModal.app.projectName}</p>
+                    <p className="text-gray-800">{detailModal.app.projectName || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="font-semibold text-gray-600">공사 내용:</p>
-                    <p className="text-gray-800">{detailModal.app.constructionDetails}</p>
+                    <p className="text-gray-800">{detailModal.app.projectDescription || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="font-semibold text-gray-600">공사 기간:</p>
-                    <p className="text-gray-800">{detailModal.app.startDate} ~ <br />{detailModal.app.endDate}</p>
+                    <p className="text-gray-800">{detailModal.app.projectStartDate && detailModal.app.projectEndDate ? `${new Date(detailModal.app.projectStartDate).toLocaleDateString('ko-KR')} ~ ${new Date(detailModal.app.projectEndDate).toLocaleDateString('ko-KR')}` : 'N/A'}</p>
                   </div>
                   <div>
                     <p className="font-semibold text-gray-600">담당 부서:</p>
-                    <p className="text-gray-800">{detailModal.app.department}</p>
+                    <p className="text-gray-800">{detailModal.app.projectManagerDepartmentName || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="font-semibold text-gray-600">담당자:</p>
-                    <p className="text-gray-800">{detailModal.app.projectManager}</p>
+                    <p className="text-gray-800">{detailModal.app.projectManagerName || 'N/A'}</p>
                   </div>
                 </div>
               </div>
 
               {/* 업체 정보 */}
-              <div className="bg-white p-4 rounded-lg shadow-md border border-ray-200">
+              <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
                 <h4 className="text-lg font-semibold text-gray-800 mb-2">업체 정보</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="font-semibold text-gray-600">업체명:</p>
-                    <p className="text-gray-800">{detailModal.app.company}</p>
+                    <p className="text-gray-800">{detailModal.app.companyName || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="font-semibold text-gray-600">담당부서:</p>
-                    <p className="text-gray-800">{detailModal.app.department}</p>
+                    <p className="text-gray-800">{detailModal.app.companyDepartmentName || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="font-semibold text-gray-600">담당자:</p>
-                    <p className="text-gray-800">{detailModal.app.projectManager}</p>
+                    <p className="text-gray-800">{detailModal.app.companyContactPerson || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600">연락처:</p>
+                    <p className="text-gray-800">{detailModal.app.companyPhoneNumber || 'N/A'}</p>
                   </div>
                 </div>
               </div>
@@ -390,70 +405,235 @@ const ApprovalsPage: React.FC = () => {
 
 // 수정 모달 컴포넌트
 const EditApplicationModal: React.FC<{
-  application: AccessApplication;
+  application: FullAccessApplication;
   onClose: () => void;
   onSave: (app: AccessApplication) => void;
 }> = ({ application, onClose, onSave }) => {
   const [formData, setFormData] = useState<AccessApplication>(application);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    const updatedData: AccessApplication = {
+      id: formData.id,
+      applicant_name: formData.applicant_name,
+      applicant_phone: formData.applicant_phone,
+      gender: formData.gender,
+      nationality: formData.nationality,
+      passport_number: formData.passport_number,
+      is_site_representative: formData.is_site_representative,
+      is_vehicle_owner: formData.is_vehicle_owner,
+      vehicle_number: formData.vehicle_number,
+      vehicle_type: formData.vehicle_type,
+      // These fields are loaded from tables and not directly editable in this modal
+      company_name: formData.company_name, // Keeping for consistency if API expects it, but not user-editable
+      project_id: formData.project_id,
+      company_id: formData.company_id,
+      visit_date: formData.visit_date,
+      agreed_on: formData.agreed_on,
+      signature: formData.signature,
+      qrid: formData.qrid,
+      status: formData.status,
+      created_at: formData.created_at,
+    };
+    onSave(updatedData);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 relative">
+      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 relative max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
         <h2 className="text-xl font-bold mb-4 text-gray-800">신청 정보 수정</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">신청자명</label>
-            <input 
-              type="text" 
-              name="name" 
-              value={formData.name} 
-              onChange={handleChange} 
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3" 
-              required 
-            />
+          {/* 기본 정보 */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">신청자명</label>
+              <input 
+                type="text" 
+                name="applicant_name" 
+                value={formData.applicant_name} 
+                onChange={handleChange} 
+                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3" 
+                required 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">연락처</label>
+              <input 
+                type="tel" 
+                name="applicant_phone" 
+                value={formData.applicant_phone} 
+                onChange={handleChange} 
+                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3" 
+                required 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">성별</label>
+              <select 
+                name="gender" 
+                value={formData.gender || ''} 
+                onChange={handleChange} 
+                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3"
+              >
+                <option value="">선택</option>
+                <option value="남성">남성</option>
+                <option value="여성">여성</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">국적</label>
+              <select 
+                name="nationality" 
+                value={formData.nationality || ''} 
+                onChange={handleChange} 
+                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3"
+              >
+                <option value="한국">한국</option>
+                <option value="미국">미국</option>
+                <option value="중국">중국</option>
+                <option value="일본">일본</option>
+                <option value="기타">기타</option>
+              </select>
+            </div>
+            {formData.nationality !== '한국' && (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">여권번호</label>
+                <input 
+                  type="text" 
+                  name="passport_number" 
+                  value={formData.passport_number || ''} 
+                  onChange={handleChange} 
+                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3"
+                />
+              </div>
+            )}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">연락처</label>
-            <input 
-              type="tel" 
-              name="phone" 
-              value={formData.phone} 
-              onChange={handleChange} 
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3" 
-              required 
-            />
+
+          {/* 역할 정보 */}
+          <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+            <h4 className="text-lg font-semibold text-gray-800 mb-2">역할 정보</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">현장대리인</label>
+                <input 
+                  type="checkbox" 
+                  name="is_site_representative" 
+                  checked={formData.is_site_representative} 
+                  onChange={handleChange} 
+                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">차량소유자</label>
+                <input 
+                  type="checkbox" 
+                  name="is_vehicle_owner" 
+                  checked={formData.is_vehicle_owner} 
+                  onChange={handleChange} 
+                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3"
+                />
+                {formData.is_vehicle_owner && (
+                  <div className="grid grid-cols-2 gap-4 mt-2 p-2 border border-gray-200 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-700 mb-1">차량번호:</p>
+                      <input 
+                        type="text" 
+                        name="vehicle_number" 
+                        value={formData.vehicle_number || ''} 
+                        onChange={handleChange} 
+                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3"
+                      />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-700 mb-1">차량종류:</p>
+                      <input 
+                        type="text" 
+                        name="vehicle_type" 
+                        value={formData.vehicle_type || ''} 
+                        onChange={handleChange} 
+                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">업체명</label>
-            <input 
-              type="text" 
-              name="company" 
-              value={formData.company} 
-              onChange={handleChange} 
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3" 
-              required 
-            />
+
+          {/* 공사 정보 */}
+          <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+            <h4 className="text-lg font-semibold text-gray-800 mb-2">공사 정보</h4>
+            <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-base">
+              <div className="col-span-2 flex items-center justify-between">
+                <div className="flex items-center flex-grow">
+                  <p className="font-medium text-gray-700 w-24 flex-shrink-0">공사명:</p>
+                  <p className="text-gray-900 font-bold flex-grow">{application.projectName || 'N/A'}</p>
+                </div>
+                <p className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+                  {application.projectStartDate && application.projectEndDate
+                    ? `(${new Date(application.projectStartDate).toLocaleDateString('ko-KR').replace(/\s/g, '')}~${new Date(application.projectEndDate).toLocaleDateString('ko-KR').replace(/\s/g, '')})`
+                    : 'N/A'}
+                </p>
+              </div>
+              <div className="col-span-2 flex items-start">
+                <p className="font-medium text-gray-700 w-24 flex-shrink-0">공사 내용:</p>
+                <p className="text-gray-800 flex-grow">{application.projectDescription || 'N/A'}</p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-medium text-gray-700 w-24 flex-shrink-0">담당 부서:</p>
+                <p className="text-gray-800 flex-grow">{application.projectManagerDepartmentName || 'N/A'}</p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-medium text-gray-700 w-24 flex-shrink-0">담당자:</p>
+                <p className="text-gray-800 flex-grow">{application.projectManagerName || 'N/A'}</p>
+              </div>
+              <div className="col-span-2 flex items-center">
+                <p className="font-medium text-gray-700 w-24 flex-shrink-0">연락처:</p>
+                <p className="text-gray-800 flex-grow">{application.projectManagerPhone || 'N/A'}</p>
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">차량번호</label>
-            <input 
-              type="text" 
-              name="vehicleNumber" 
-              value={formData.vehicleNumber || ''} 
-              onChange={handleChange} 
-              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3" 
-            />
+
+          {/* 업체 정보 */}
+          <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+            <h4 className="text-lg font-semibold text-gray-800 mb-2">업체 정보</h4>
+            <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-base">
+              <div className="col-span-2 flex items-center">
+                <p className="font-medium text-gray-700 w-24 flex-shrink-0">업체명:</p>
+                <p className="text-gray-900 font-bold flex-grow">
+                  {application.companyName || 'N/A'}
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-medium text-gray-700 w-24 flex-shrink-0">담당부서:</p>
+                <p className="text-gray-800 flex-grow">
+                  {application.companyDepartmentName || 'N/A'}
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className="font-medium text-gray-700 w-24 flex-shrink-0">담당자:</p>
+                <p className="text-gray-800 flex-grow">
+                  {application.companyContactPerson || 'N/A'}
+                </p>
+              </div>
+              <div className="col-span-2 flex items-center">
+                <p className="font-medium text-gray-700 w-24 flex-shrink-0">연락처:</p>
+                <p className="text-gray-800 flex-grow">
+                  {application.companyPhoneNumber || 'N/A'}
+                </p>
+              </div>
+            </div>
           </div>
+
           <div className="flex justify-end space-x-2 pt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
               취소
