@@ -13,7 +13,7 @@ const ManagerModal: React.FC<{
     email: manager?.email || '',
     phone: manager?.phone || '',
     role: manager?.role || 'general',
-    departmentId: departmentId,
+    department_id: departmentId, // department_id로 변경
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -105,7 +105,7 @@ const DepartmentModal: React.FC<{
 }> = ({ department, onClose, onSave }) => {
   const [formData, setFormData] = useState<Partial<Department>>({
     name: department?.name || '',
-    managers: department?.managers || [],
+    // managers 필드는 departments 테이블의 실제 컬럼이 아니므로 초기화에서 제외
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -114,12 +114,14 @@ const DepartmentModal: React.FC<{
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const departmentData = {
-      id: department?.id || Date.now().toString(),
-      name: formData.name || '',
-      managers: formData.managers || [],
-    } as Department;
-    onSave(departmentData);
+    // managers 필드는 데이터베이스에 직접 저장되지 않으므로 제거
+    const { managers, ...departmentData } = formData;
+    onSave({ 
+      id: department?.id || crypto.randomUUID(), // UUID 생성 사용
+      name: departmentData.name || '',
+      created_at: department?.created_at || new Date().toISOString(), // 기존값이 없으면 현재 시간 사용
+      managers: [], // managers 필드는 저장 시 빈 배열로 설정하거나 제거 (여기서는 제거된 것으로 간주)
+    } as Department);
   };
 
   return (
@@ -140,111 +142,8 @@ const DepartmentModal: React.FC<{
               />
             </div>
             
-            {/* 관리자 목록 */}
-            <div>
-              <label className="block text-sm font-medium mb-2">관리자 목록</label>
-              <div className="space-y-3">
-                {formData.managers?.map((manager, index) => (
-                  <div key={manager.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700">이름 *</label>
-                        <input 
-                          type="text" 
-                          value={manager.name} 
-                          onChange={(e) => {
-                            const updatedManagers = [...(formData.managers || [])];
-                            updatedManagers[index] = { ...manager, name: e.target.value };
-                            setFormData({ ...formData, managers: updatedManagers });
-                          }}
-                          className="w-full mt-1 border-gray-300 rounded-md shadow-sm text-sm py-2 px-3" 
-                          required 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700">이메일 *</label>
-                        <input 
-                          type="email" 
-                          value={manager.email} 
-                          onChange={(e) => {
-                            const updatedManagers = [...(formData.managers || [])];
-                            updatedManagers[index] = { ...manager, email: e.target.value };
-                            setFormData({ ...formData, managers: updatedManagers });
-                          }}
-                          className="w-full mt-1 border-gray-300 rounded-md shadow-sm text-sm py-2 px-3" 
-                          required 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700">전화번호 *</label>
-                        <input 
-                          type="tel" 
-                          value={manager.phone} 
-                          onChange={(e) => {
-                            const updatedManagers = [...(formData.managers || [])];
-                            updatedManagers[index] = { ...manager, phone: e.target.value };
-                            setFormData({ ...formData, managers: updatedManagers });
-                          }}
-                          className="w-full mt-1 border-gray-300 rounded-md shadow-sm text-sm py-2 px-3" 
-                          placeholder="010-1234-5678"
-                          required 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700">역할 *</label>
-                        <select 
-                          value={manager.role} 
-                          onChange={(e) => {
-                            const updatedManagers = [...(formData.managers || [])];
-                            updatedManagers[index] = { ...manager, role: e.target.value as 'general' | 'safety' | 'admin' };
-                            setFormData({ ...formData, managers: updatedManagers });
-                          }}
-                          className="w-full mt-1 border-gray-300 rounded-md shadow-sm text-sm py-2 px-3" 
-                          required
-                        >
-                          <option value="general">일반</option>
-                          <option value="safety">안전관리자</option>
-                          <option value="admin">관리자</option>
-                        </select>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updatedManagers = formData.managers?.filter((_, i) => i !== index) || [];
-                        setFormData({ ...formData, managers: updatedManagers });
-                      }}
-                      className="mt-2 text-red-600 hover:text-red-800 text-sm"
-                    >
-                      삭제
-                    </button>
-                  </div>
-                ))}
-                
-                {/* 관리자 추가 버튼 */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newManager: Manager = {
-                      id: Date.now().toString(),
-                      name: '',
-                      email: '',
-                      phone: '',
-                      role: 'general',
-                      departmentId: department?.id || '',
-                    };
-                    setFormData({ 
-                      ...formData, 
-                      managers: [...(formData.managers || []), newManager] 
-                    });
-                  }}
-                  className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600 flex items-center justify-center"
-                >
-                  <span className="text-xl mr-2">+</span>
-                  관리자 추가
-                </button>
-              </div>
-            </div>
+            {/* 관리자 목록 - DepartmentModal에서 직접 관리자 추가/수정 로직 제거 */}
+            {/* 이 부분은 DepartmentModal의 역할이 아니므로, DepartmentsPage에서 ManagerModal을 통해 처리합니다. */}
             
             <div className="flex justify-end space-x-2 pt-4 flex-shrink-0">
               <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">취소</button>
@@ -272,37 +171,11 @@ const DepartmentsPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const mockDepartments: Department[] = [
-        {
-          id: 'dept-1',
-          name: '안전관리부',
-          companyId: 'comp-1',
-          managers: [
-            { id: 'manager-1', name: '김안전', email: 'safety.kim@example.com', phone: '010-1111-1111', role: 'safety', departmentId: 'dept-1' },
-            { id: 'manager-2', name: '이안전', email: 'safety.lee@example.com', phone: '010-2222-2222', role: 'safety', departmentId: 'dept-1' },
-          ],
-        },
-        {
-          id: 'dept-2',
-          name: 'IT지원부',
-          companyId: 'comp-1',
-          managers: [
-            { id: 'manager-3', name: '박지원', email: 'support.park@example.com', phone: '010-3333-3333', role: 'admin', departmentId: 'dept-2' },
-            { id: 'manager-4', name: '최지원', email: 'support.choi@example.com', phone: '010-4444-4444', role: 'general', departmentId: 'dept-2' },
-          ],
-        },
-        {
-          id: 'dept-3',
-          name: '시설관리부',
-          companyId: 'comp-2',
-          managers: [
-              { id: 'manager-5', name: '정시설', email: 'facility.jung@example.com', phone: '010-5555-5555', role: 'general', departmentId: 'dept-3' },
-          ]
-        }
-      ];
-      setDepartments(mockDepartments);
+      // 실제 API 호출로 변경
+      const data = await api.getDepartments();
+      setDepartments(data);
     } catch (error) {
-      console.error("Failed to fetch data:", error);
+      console.error("Failed to fetch departments:", error);
     } finally {
       setLoading(false);
     }
@@ -312,30 +185,40 @@ const DepartmentsPage: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleSaveDepartment = (departmentData: Department) => {
-    // 실제로는 API 호출
-    if (editingDepartment) {
-      setDepartments(prev => prev.map(d => d.id === departmentData.id ? departmentData : d));
-    } else {
-      setDepartments(prev => [...prev, departmentData]);
+  const handleSaveDepartment = async (departmentData: Department) => {
+    try {
+      if (editingDepartment) {
+        await api.updateDepartment(departmentData);
+      } else {
+        await api.addDepartment(departmentData);
+      }
+      fetchData(); // 데이터 새로고침
+    } catch (error) {
+      console.error("Failed to save department:", error);
+    } finally {
+      setIsDeptModalOpen(false);
+      setEditingDepartment(null);
     }
-    setIsDeptModalOpen(false);
-    setEditingDepartment(null);
   };
 
-  const handleSaveManager = (managerData: Manager) => {
-    setDepartments(prev => prev.map(dept => {
-      if (dept.id === selectedDepartmentId) {
-        const updatedManagers = editingManager 
-          ? dept.managers.map(m => m.id === managerData.id ? managerData : m)
-          : [...dept.managers, managerData];
-        return { ...dept, managers: updatedManagers };
+  const handleSaveManager = async (managerData: Manager) => {
+    try {
+      if (editingManager) {
+        await api.updateManager(managerData);
+      } else {
+        // 새로운 관리자 추가 시, id와 created_at 필드를 제거하고 API 호출
+        const { id, created_at, ...dataToSave } = managerData;
+        await api.addManager(dataToSave as Omit<Manager, 'id' | 'created_at'>);
       }
-      return dept;
-    }));
-    setIsManagerModalOpen(false);
-    setEditingManager(null);
-    setSelectedDepartmentId('');
+      fetchData(); // 데이터 새로고침
+    } catch (error) {
+      console.error("Failed to save manager:", error);
+      alert('관리자 저장에 실패했습니다.');
+    } finally {
+      setIsManagerModalOpen(false);
+      setEditingManager(null);
+      setSelectedDepartmentId('');
+    }
   };
 
   const toggleDepartment = (deptId: string) => {
@@ -409,7 +292,7 @@ const DepartmentsPage: React.FC = () => {
                     </button>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">{dept.name}</h3>
-                      <p className="text-xs text-gray-400">관리자 {dept.managers.length}명</p>
+                      <p className="text-xs text-gray-400">관리자 {dept.managers?.length || 0}명</p>
                     </div>
                   </div>
                   <div className="flex space-x-2">
@@ -419,23 +302,41 @@ const DepartmentsPage: React.FC = () => {
                     >
                       수정
                     </button>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm('정말로 이 부서를 삭제하시겠습니까? 관련 관리자도 삭제됩니다.')) {
+                          try {
+                            // 부서 삭제 전, 해당 부서의 모든 관리자 삭제 (Supabase RLS 및 FK 설정에 따라 다를 수 있음)
+                            // 여기서는 직접 삭제 로직을 추가하지 않고, Supabase의 cascade delete 또는 RLS 정책을 신뢰합니다.
+                            await api.deleteDepartment(dept.id);
+                            fetchData(); // 데이터 새로고침
+                          } catch (error) {
+                            console.error("Failed to delete department:", error);
+                            alert('부서 삭제에 실패했습니다. 관련 데이터가 있을 수 있습니다.');
+                          }
+                        }
+                      }}
+                      className="px-3 py-1 border border-red-300 text-red-700 text-sm rounded-md hover:bg-red-50"
+                    >
+                      삭제
+                    </button>
                   </div>
                 </div>
               </div>
               
               {isExpanded && (
                 <div className="p-4">
-                  {dept.managers.length === 0 ? (
+                  {dept.managers?.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">등록된 관리자가 없습니다.</p>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {dept.managers.map(manager => (
+                      {dept.managers?.map(manager => (
                         <div key={manager.id} className="border border-gray-200 rounded-lg p-3">
                           <div className="flex justify-between items-start mb-2">
                             <div>
                               <h4 className="font-semibold text-gray-900">{manager.name}</h4>
                               <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                {roleLabels[manager.role]}
+                                {roleLabels[manager.role || 'general']}
                               </span>
                             </div>
                             <button
@@ -443,6 +344,22 @@ const DepartmentsPage: React.FC = () => {
                               className="text-blue-600 hover:text-blue-800 text-sm"
                             >
                               수정
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (window.confirm('정말로 이 관리자를 삭제하시겠습니까?')) {
+                                  try {
+                                    await api.deleteManager(manager.id);
+                                    fetchData(); // 데이터 새로고침
+                                  } catch (error) {
+                                    console.error("Failed to delete manager:", error);
+                                    alert('관리자 삭제에 실패했습니다.');
+                                  }
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-800 text-sm ml-2"
+                            >
+                              삭제
                             </button>
                           </div>
                           <div className="text-sm text-gray-600">
@@ -453,6 +370,14 @@ const DepartmentsPage: React.FC = () => {
                       ))}
                     </div>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedDepartmentId(dept.id); setEditingManager(null); setIsManagerModalOpen(true); }}
+                    className="w-full mt-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600 flex items-center justify-center"
+                  >
+                    <span className="text-xl mr-2">+</span>
+                    관리자 추가
+                  </button>
                 </div>
               )}
             </div>

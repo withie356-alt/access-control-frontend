@@ -12,7 +12,6 @@ import ApprovalsPage from './pages/admin/Approvals';
 import ProjectsPage from './pages/admin/Projects';
 import CompaniesPage from './pages/admin/Companies';
 import DepartmentsPage from './pages/admin/Departments';
-import UsersPage from './pages/admin/Users';
 import UserLayout from './pages/user/UserLayout';
 
 const App: React.FC = () => {
@@ -35,7 +34,6 @@ const App: React.FC = () => {
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="companies" element={<CompaniesPage />} />
           <Route path="departments" element={<DepartmentsPage />} />
-          <Route path="users" element={<UsersPage />} />
           <Route index element={<DashboardPage />} />
         </Route>
       </Routes>

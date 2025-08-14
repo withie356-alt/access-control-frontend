@@ -46,26 +46,7 @@ const ApplyPage: React.FC = () => {
           api.getDepartments(),
         ]);
         setProjects(fetchedProjects);
-        if (fetchedDepartments.length > 0 && fetchedCompanies.length > 0) {
-            const mockCompanies = fetchedCompanies.map((c, index) => {
-                const department = fetchedDepartments[index % fetchedDepartments.length];
-                if (department.managers.length > 0) {
-                    const manager = department.managers[index % department.managers.length];
-                    return {
-                        ...c,
-                        department: c.department || department.name,
-                        manager: c.manager || manager.name,
-                    }
-                }
-                return {
-                    ...c,
-                    department: c.department || department.name,
-                }
-            });
-            setCompanies(mockCompanies);
-        } else {
-            setCompanies(fetchedCompanies);
-        }
+        setCompanies(fetchedCompanies);
         setDepartments(fetchedDepartments);
       } catch (err) {
         setError('데이터를 불러오는 데 실패했습니다.');
@@ -180,6 +161,16 @@ const ApplyPage: React.FC = () => {
   const validateStep2 = () => {
     return formData.name && formData.phone && formData.dateOfBirth && formData.company && formData.projectName && formData.gender && formData.nationality && (!formData.vehicleOwner || (formData.vehicleNumber && formData.vehicleType));
   }
+
+  const getDepartmentName = (deptId: string | undefined) => {
+    const dept = departments.find(d => d.id === deptId);
+    return dept ? dept.name : '-';
+  };
+
+  const getManagerName = (managerId: string | undefined) => {
+    const manager = managers.find(m => m.id === managerId);
+    return manager ? manager.name : '-';
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -278,21 +269,21 @@ const ApplyPage: React.FC = () => {
                 <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
                   <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-3">선택된 공사 정보</h3>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-xs sm:text-sm">
-                    <div>
-                      <span className="font-medium text-gray-600">공사명:</span>
-                      <p className="text-gray-800 mt-1">{selectedProject.name}</p>
+                    <div className="col-span-2 flex items-center">
+                      <p className="text-gray-800 font-bold text-base">{selectedProject.name}</p>
+                      {selectedProject.start_date && selectedProject.end_date && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 ml-2">
+                          {new Date(selectedProject.start_date).toLocaleDateString('ko-KR')} ~ {new Date(selectedProject.end_date).toLocaleDateString('ko-KR')}
+                        </span>
+                      )}
                     </div>
                     <div>
-                      <span className="font-medium text-gray-600">관리자:</span>
-                      <p className="text-gray-800 mt-1">{selectedProject.manager}</p>
+                      <span className="font-medium text-gray-600">담당부서:</span>
+                      <p className="text-gray-800 mt-1">{selectedProject.department_name || '-'}</p>
                     </div>
                     <div>
-                      <span className="font-medium text-gray-600">시작일:</span>
-                      <p className="text-gray-800 mt-1">{new Date(selectedProject.startDate).toLocaleDateString('ko-KR')}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-600">종료일:</span>
-                      <p className="text-gray-800 mt-1">{new Date(selectedProject.endDate).toLocaleDateString('ko-KR')}</p>
+                      <span className="font-medium text-gray-600">담당자:</span>
+                      <p className="text-gray-800 mt-1">{selectedProject.manager_name || '-'}</p>
                     </div>
                     <div className="col-span-2">
                       <span className="font-medium text-gray-600">공사내용:</span>
@@ -328,8 +319,12 @@ const ApplyPage: React.FC = () => {
                         className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                       >
                         <div className="font-medium text-gray-900">{company.name}</div>
-                        {company.department && (
-                          <div className="text-xs text-gray-500">담당부서: {company.department}</div>
+                        {(company.department_name || company.manager_name || company.phone_number) && (
+                          <div className="text-xs text-gray-500">
+                            {company.department_name && `부서: ${company.department_name}`}
+                            {company.manager_name && ` | 담당: ${company.manager_name}`}
+                            {company.phone_number && ` | 연락처: ${company.phone_number}`}
+                          </div>
                         )}
                       </div>
                     ))}
@@ -342,20 +337,19 @@ const ApplyPage: React.FC = () => {
                 <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
                   <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2">선택된 업체 정보</h3>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-xs sm:text-sm">
-                    <div>
-                      <span className="font-medium text-gray-600">업체명:</span>
-                      <p className="text-gray-800 mt-1">{selectedCompany.name}</p>
+                    <div className="col-span-2">
+                      <p className="text-gray-800 font-bold text-base">{selectedCompany.name}</p>
                     </div>
-                    {selectedCompany.department && (
+                    {selectedCompany.department_id && (
                       <div>
                         <span className="font-medium text-gray-600">담당부서:</span>
-                        <p className="text-gray-800 mt-1">{selectedCompany.department}</p>
+                        <p className="text-gray-800 mt-1">{getDepartmentName(selectedCompany.department_id)}</p>
                       </div>
                     )}
-                    {selectedCompany.manager && (
+                    {selectedCompany.manager_id && (
                       <div>
                         <span className="font-medium text-gray-600">담당자:</span>
-                        <p className="text-gray-800 mt-1">{selectedCompany.manager}</p>
+                        <p className="text-gray-800 mt-1">{getManagerName(selectedCompany.manager_id)}</p>
                       </div>
                     )}
                   </div>

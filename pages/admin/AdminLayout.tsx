@@ -14,7 +14,6 @@ const AdminLayout: React.FC = () => {
         'projects': '공사 관리',
         'companies': '업체 관리',
         'departments': '담당부서 관리',
-        'users': 'User관리'
     };
 
     const navLinks = [
@@ -23,7 +22,6 @@ const AdminLayout: React.FC = () => {
         { to: '/admin/projects', label: '공사 관리' },
         { to: '/admin/companies', label: '업체 관리' },
         { to: '/admin/departments', label: '담당부서 관리' },
-        { to: '/admin/users', label: 'User관리' },
     ];
 
     return (

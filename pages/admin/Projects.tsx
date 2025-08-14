@@ -5,49 +5,46 @@ import { Project, Department, Manager } from '../../types';
 
 const ProjectModal: React.FC<{
   project: Project | null;
+  departments: Department[]; // Department 데이터 추가
+  allManagers: Manager[];    // Manager 데이터 추가
   onClose: () => void;
-  onSave: (project: Project | Omit<Project, 'id'>) => void;
-}> = ({ project, onClose, onSave }) => {
-  const [formData, setFormData] = useState<Project | Omit<Project, 'id'>>({
-    name: '',
-    startDate: '',
-    endDate: '',
-    manager: '',
-    department: '',
-    description: '',
+  onSave: (project: Project) => void;
+}> = ({ project, departments, allManagers, onClose, onSave }) => {
+  const [formData, setFormData] = useState<Project>({
+    id: project?.id || crypto.randomUUID(),
+    name: project?.name || '',
+    start_date: project?.start_date || '',
+    end_date: project?.end_date || '',
+    manager_id: project?.manager_id || '',
+    description: project?.description || '',
+    created_at: project?.created_at || new Date().toISOString(),
   });
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [managers, setManagers] = useState<Manager[]>([]);
+
+  const filteredManagers = allManagers.filter(
+    (manager) => manager.department_id === formData.department_id
+  );
 
   useEffect(() => {
-    api.getDepartments().then(setDepartments);
-  }, []);
-
-  useEffect(() => {
-    if (project) {
-      setFormData(project);
-    } else {
-      setFormData({ name: '', startDate: '', endDate: '', manager: '', department: '', description: '' });
-    }
+    setFormData(project ? { ...project } : {
+      id: crypto.randomUUID(),
+      name: '',
+      start_date: '',
+      end_date: '',
+      manager_id: '',
+      description: '',
+      created_at: new Date().toISOString(),
+    });
   }, [project]);
 
-  useEffect(() => {
-    // 부서가 선택되면 해당 부서의 매니저만 필터링
-    const dept = departments.find(d => d.name === formData.department);
-    setManagers(dept ? dept.managers : []);
-    // 부서가 바뀌면 담당자도 초기화
-    setFormData(prev => ({ ...prev, manager: '' }));
-    // eslint-disable-next-line
-  }, [formData.department, departments]);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.startDate || !formData.endDate) {
-      alert('공사명, 시작일, 종료일은 필수입니다.');
+    if (!formData.name || !formData.start_date || !formData.end_date) {
+      alert('공사명, 시작일, 종료일은 필수 항목입니다.');
       return;
     }
     onSave(formData);
@@ -65,34 +62,47 @@ const ProjectModal: React.FC<{
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium">시작일 *</label>
-              <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3" required/>
+              <input type="date" name="start_date" value={formData.start_date} onChange={handleChange} className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3" required/>
             </div>
             <div>
               <label className="block text-sm font-medium">종료일 *</label>
-              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3" required/>
+              <input type="date" name="end_date" value={formData.end_date} onChange={handleChange} className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3" required/>
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium">담당부서</label>
-            <select name="department" value={formData.department || ''} onChange={handleChange} className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3">
+            <select
+              name="department_id"
+              value={formData.department_id || ''}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, department_id: e.target.value, manager_id: '' }));
+              }}
+              className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3"
+            >
               <option value="">담당부서를 선택하세요</option>
               {departments.map(dept => (
-                <option key={dept.id} value={dept.name}>{dept.name}</option>
+                <option key={dept.id} value={dept.id}>{dept.name}</option>
               ))}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium">담당자</label>
-            <select name="manager" value={formData.manager || ''} onChange={handleChange} className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3" disabled={!formData.department}>
-              <option value="">{formData.department ? '담당자를 선택하세요' : '담당부서를 먼저 선택하세요'}</option>
-              {managers.map(manager => (
-                <option key={manager.id} value={manager.name}>{manager.name} ({manager.role === 'general' ? '일반' : manager.role === 'safety' ? '안전관리자' : '관리자'})</option>
+            <select
+              name="manager_id"
+              value={formData.manager_id || ''}
+              onChange={handleChange}
+              className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3"
+              disabled={!formData.department_id}
+            >
+              <option value="">{formData.department_id ? '담당자를 선택하세요' : '담당부서를 먼저 선택하세요'}</option>
+              {filteredManagers.map(manager => (
+                <option key={manager.id} value={manager.id}>{manager.name} ({manager.role === 'general' ? '일반' : manager.role === 'safety' ? '안전관리자' : '관리자'})</option>
               ))}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium">공사 내용</label>
-            <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3"></textarea>
+            <textarea name="description" value={formData.description || ''} onChange={handleChange} rows={3} className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3"></textarea>
           </div>
           <div className="flex justify-end space-x-2">
             <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">취소</button>
@@ -108,49 +118,27 @@ import { ArrowPathIcon } from '../../components/icons';
 
 const ProjectsPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [allManagers, setAllManagers] = useState<Manager[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'All' | 'Planned' | 'InProgress' | 'Completed'>('All');
-
-  const projectCounts = React.useMemo(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0); // Ignore time for date comparison
-
-    let planned = 0;
-    let inProgress = 0;
-    let completed = 0;
-
-    projects.forEach(project => {
-      const startDate = new Date(project.startDate);
-      startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(project.endDate);
-      endDate.setHours(0, 0, 0, 0);
-
-      if (startDate > now) {
-        planned++;
-      } else if (startDate <= now && endDate >= now) {
-        inProgress++;
-      } else if (endDate < now) {
-        completed++;
-      }
-    });
-
-    return {
-      Planned: planned,
-      InProgress: inProgress,
-      Completed: completed,
-      Total: projects.length,
-    };
-  }, [projects]);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
 
   const fetchProjects = async () => {
     setLoading(true);
     try {
-      const data = await api.getProjects();
-      setProjects(data);
+      const [projectsData, departmentsData, managersData] = await Promise.all([
+        api.getProjects(),
+        api.getDepartments(),
+        api.getManagers(),
+      ]);
+      setProjects(projectsData);
+      setDepartments(departmentsData);
+      setAllManagers(managersData);
     } catch (error) {
       console.error("Failed to fetch projects:", error);
     } finally {
@@ -162,60 +150,76 @@ const ProjectsPage: React.FC = () => {
     fetchProjects();
   }, []);
 
+  const handleSave = async (projectData: Project) => {
+    try {
+      if (editingProject) {
+        await api.updateProject(projectData);
+      } else {
+        // 새 공사 등록 시, id와 created_at 필드를 제거하고 API 호출
+        const { id, created_at, ...dataToSave } = projectData;
+        await api.addProject(dataToSave as Omit<Project, 'id' | 'created_at'>);
+      }
+      fetchProjects(); // 데이터 새로고침
+      setIsModalOpen(false);
+      setEditingProject(null);
+    } catch (err) {
+      console.error("Failed to save project:", err);
+      console.log("Detailed error object:", err);
+      alert("저장에 실패했습니다.");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('정말로 이 공사 정보를 삭제하시겠습니까?')) {
+      try {
+        await api.deleteProject(id);
+        fetchProjects();
+      } catch (err) {
+        alert('삭제에 실패했습니다.');
+      }
+    }
+  };
+
+  const getDepartmentName = (deptId: string | undefined) => {
+    const dept = departments.find(d => d.id === deptId);
+    return dept ? dept.name : '-';
+  };
+
+  const getManagerName = (managerId: string | undefined) => {
+    const manager = allManagers.find(m => m.id === managerId);
+    return manager ? manager.name : '-';
+  };
+
   const filteredProjects = React.useMemo(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
     return projects.filter(project => {
       const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (project.department && project.department.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (project.manager && project.manager.toLowerCase().includes(searchTerm.toLowerCase()));
+        (getDepartmentName(project.department_id).toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (getManagerName(project.manager_id).toLowerCase().includes(searchTerm.toLowerCase()));
 
       if (!matchesSearch) return false;
 
       if (filterStatus === 'All') return true;
 
-      const startDate = new Date(project.startDate);
+      const startDate = new Date(project.start_date || '');
       startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(project.endDate);
+      const endDate = new Date(project.end_date || '');
       endDate.setHours(0, 0, 0, 0);
 
-      if (filterStatus === 'Planned') {
-        return startDate > now;
-      } else if (filterStatus === 'InProgress') {
-        return startDate <= now && endDate >= now;
-      } else if (filterStatus === 'Completed') {
-        return endDate < now;
+      switch (filterStatus) {
+        case 'Planned':
+          return startDate > now;
+        case 'InProgress':
+          return startDate <= now && endDate >= now;
+        case 'Completed':
+          return endDate < now;
+        default:
+          return true;
       }
-      return false;
     });
-  }, [projects, searchTerm, filterStatus]);
-
-  const handleSave = async (projectData: Project | Omit<Project, 'id'>) => {
-    try {
-        if ('id' in projectData) {
-            await api.updateProject(projectData);
-        } else {
-            await api.addProject(projectData);
-        }
-        fetchProjects();
-        setIsModalOpen(false);
-        setEditingProject(null);
-    } catch(err) {
-        alert("저장에 실패했습니다.");
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if(window.confirm('정말로 이 공사 정보를 삭제하시겠습니까?')) {
-        try {
-            await api.deleteProject(id);
-            fetchProjects();
-        } catch(err) {
-            alert('삭제에 실패했습니다.');
-        }
-    }
-  }
+  }, [projects, searchTerm, filterStatus, departments, allManagers]);
 
   return (
     <div className="space-y-6">
@@ -253,28 +257,6 @@ const ProjectsPage: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-        <div className="grid grid-cols-4 gap-4">
-          <div className="bg-blue-50 p-3 rounded-lg text-center">
-            <div className="text-base font-medium text-blue-800">공사 계획</div>
-            <div className="text-xl font-bold text-blue-600">{projectCounts.Planned}건</div>
-          </div>
-          <div className="bg-yellow-50 p-3 rounded-lg text-center">
-            <div className="text-base font-medium text-yellow-800">공사 중</div>
-            <div className="text-xl font-bold text-yellow-600">{projectCounts.InProgress}건</div>
-          </div>
-          <div className="bg-green-50 p-3 rounded-lg text-center">
-            <div className="text-base font-medium text-green-800">공사 완료</div>
-            <div className="text-xl font-bold text-green-600">{projectCounts.Completed}건</div>
-          </div>
-          <div className="bg-gray-50 p-3 rounded-lg text-center">
-            <div className="text-base font-medium text-gray-800">전체</div>
-            <div className="text-xl font-bold text-gray-600">{projectCounts.Total}건</div>
-          </div>
-        </div>
-      </div>
-
-      {/* 카드형 UI */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
           <div className="col-span-full text-center py-8">로딩 중...</div>
@@ -285,11 +267,11 @@ const ProjectsPage: React.FC = () => {
             <div className="flex items-center justify-between mb-2">
               <div className="font-bold text-lg text-gray-800">{project.name}</div>
               <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                {project.startDate} ~ {project.endDate}
+                {project.start_date} ~ {project.end_date}
               </div>
             </div>
-            <div className="text-sm text-gray-600">담당부서: <span className="font-medium text-gray-800">{project.department || '-'}</span></div>
-            <div className="text-sm text-gray-600">담당자: <span className="font-medium text-gray-800">{project.manager || '-'}</span></div>
+            <div className="text-sm text-gray-600">담당부서: <span className="font-medium text-gray-800">{getDepartmentName(project.department_id) || '-'}</span></div>
+            <div className="text-sm text-gray-600">담당자: <span className="font-medium text-gray-800">{getManagerName(project.manager_id) || '-'}</span></div>
             <div className="text-sm text-gray-500 mt-2 line-clamp-2">{project.description}</div>
             
             <div className="flex gap-2 mt-3">
@@ -304,7 +286,15 @@ const ProjectsPage: React.FC = () => {
         ))}
       </div>
       
-      {isModalOpen && <ProjectModal project={editingProject} onClose={() => setIsModalOpen(false)} onSave={handleSave} />}
+      {isModalOpen && (
+        <ProjectModal
+          project={editingProject}
+          departments={departments}
+          allManagers={allManagers}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSave}
+        />
+      )}
     </div>
   );
 };

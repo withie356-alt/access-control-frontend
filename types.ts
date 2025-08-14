@@ -1,68 +1,94 @@
 
 export enum ApplicationStatus {
-  Pending = '대기',
-  Approved = '완료',
-  Rejected = '반려',
+  Pending = 'pending',
+  Approved = 'approved',
+  Rejected = 'rejected',
 }
 
 export interface AccessApplication {
   id: string;
-  name: string;
-  phone: string;
-  company: string;
-  projectName: string;
-  vehicleNumber?: string;
-  agreedOn: string;
-  signature: string; // Base64 string
-  status: ApplicationStatus;
-  createdAt: string;
-  qrCodeUrl?: string;
-  // 추가 필드
+  applicant_name: string;
+  applicant_phone: string;
   gender?: string;
   nationality?: string;
-  passportNumber?: string;
-  isSiteRepresentative?: boolean;
-  vehicleOwner?: boolean;
-  vehicleOwnerName?: string;
-  vehicleType?: string;
-  department?: string;
-  startDate?: string;
-  endDate?: string;
-  projectManager?: string;
-  constructionDetails?: string;
+  passport_number?: string;
+  company_name?: string;
+  project_id?: string; // UUID
+  visit_date: string; // DATE
+  status: ApplicationStatus;
+  is_site_representative?: boolean;
+  is_vehicle_owner?: boolean;
+  vehicle_number?: string;
+  vehicle_type?: string;
+  agreed_on?: string; // TIMESTAMPTZ
+  signature?: string; // Base64 string
+  qrid?: string; // TEXT UNIQUE
+  created_at: string; // TIMESTAMPTZ
+  qrCodeUrl?: string; // This is not from DB, but might be generated
+}
+
+export interface FullAccessApplication extends AccessApplication {
+  checkInTime?: string; // From access_logs
+  checkOutTime?: string; // From access_logs
+  projectName?: string; // From projects.name
+  projectDescription?: string; // From projects.description
+  projectStartDate?: string; // From projects.start_date
+  projectEndDate?: string; // From projects.end_date
+  projectManagerName?: string; // From managers.name
+  companyContactPerson?: string; // From companies.contact_person
+  companyPhoneNumber?: string; // From companies.phone_number
+  departmentName?: string; // From departments.name
 }
 
 export interface Project {
   id: string;
   name: string;
-  startDate: string;
-  endDate: string;
-  manager: string;
-  department?: string;
-  description: string;
+  description?: string;
+  start_date?: string; // DATE
+  end_date?: string; // DATE
+  manager_id?: string; // UUID
+  department_id?: string; // UUID
+  manager_name?: string; // From managers table
+  manager_role?: 'general' | 'safety' | 'admin'; // From managers table
+  manager_department_name?: string; // From managers -> departments
+  department_name?: string; // From departments table
+  created_at: string; // TIMESTAMPTZ
 }
 
 export interface Company {
   id: string;
   name: string;
-  department?: string;
-  manager?: string;
+  contact_person?: string;
+  phone_number?: string;
+  created_at: string; // TIMESTAMPTZ
+  department_id?: string; // UUID
+  manager_id?: string; // UUID
+  department_name?: string; // From departments table
+  manager_name?: string; // From managers table
 }
 
 export interface Department {
   id: string;
   name: string;
-  companyId: string;
-  managers: Manager[];
+  created_at: string; // TIMESTAMPTZ
+  managers?: Manager[];
 }
 
 export interface Manager {
   id: string;
   name: string;
-  email: string;
-  phone: string;
-  role: 'general' | 'safety' | 'admin'; // 일반, 안전관리자, 관리자
-  departmentId: string;
+  email?: string;
+  phone?: string;
+  role?: 'general' | 'safety' | 'admin';
+  department_id?: string; // UUID
+  created_at: string; // TIMESTAMPTZ
+}
+
+export interface AccessLog {
+  id: string;
+  qrid: string;
+  event_type: 'check_in' | 'check_out';
+  timestamp: string;
 }
 
 export interface DailyStats {
