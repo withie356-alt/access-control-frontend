@@ -1,36 +1,49 @@
-
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { UserPlusIcon, MagnifyingGlassIcon, ShieldCheckIcon, CheckBadgeIcon } from '../components/icons';
+import { useAuth } from '../context/AuthContext';
 
 const HomePage: React.FC = () => {
+  const { isLoggedIn, user } = useAuth(); // Removed logout from useAuth
+  const navigate = useNavigate();
+
+  const handleManageClick = () => {
+    if (isLoggedIn && user) {
+      if (user.role === 'guardroom') {
+        navigate('/guardroom/dashboard');
+      } else if (user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        alert('접근 권한이 없습니다.');
+      }
+    } else {
+      navigate('/auth/login'); // Redirect to login if not logged in
+    }
+  };
+
+  // Removed handleLogout function
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-2 sm:p-4">
       {/* 위드인천에너지 로고 - 왼쪽 상부 (모든 화면에서 표시) */}
       <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex items-center">
-        <img 
-          src="/with-incheon-energy-logo.png" 
-          alt="위드인천에너지 로고" 
+        <img
+          src="/with-incheon-energy-logo.png"
+          alt="위드인천에너지 로고"
           className="h-8 sm:h-10 w-auto"
         />
       </div>
 
-      {/* 관리자 및 경비실 버튼 - 우측 상부 */}
+      {/* 관리 버튼 - 우측 상부 */}
       <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex items-center space-x-2">
-        <Link
-          to="/guardroom/dashboard"
+        <button
+          onClick={handleManageClick}
           className="inline-flex items-center px-2 py-1 sm:px-4 sm:py-2 bg-power-blue-600 text-white text-xs sm:text-sm font-medium rounded-md hover:bg-power-blue-700 transition-colors duration-200 shadow-sm"
         >
           <CheckBadgeIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-          경비실
-        </Link>
-        <Link
-          to="/admin/dashboard"
-          className="inline-flex items-center px-2 py-1 sm:px-4 sm:py-2 bg-power-blue-600 text-white text-xs sm:text-sm font-medium rounded-md hover:bg-power-blue-700 transition-colors duration-200 shadow-sm"
-        >
-          <CheckBadgeIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-          관리자
-        </Link>
+          관리
+        </button>
+        {/* Removed conditional rendering for login/logout buttons */}
       </div>
 
       <header className="text-center mb-8 sm:mb-12 mt-16 sm:mt-0 px-4">

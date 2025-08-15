@@ -15,11 +15,11 @@ const LoginPage: React.FC = () => {
     const result = await login(email, password); // Await the login call
 
     if (result.success) {
-      // 로그인 성공 후 user 객체에서 role을 가져와 리다이렉션
-      if (user) { // user 객체가 존재하는지 확인
-        if (user.role === 'admin') {
+      console.log('Logged in user role:', result.user?.role); // 디버깅용
+      if (result.user) { // user 객체가 존재하는지 확인
+        if (result.user.role === 'admin') {
           navigate('/admin/dashboard');
-        } else if (user.role === 'guardroom') {
+        } else if (result.user.role === 'guardroom') {
           navigate('/guardroom/dashboard');
         } else {
           navigate('/'); // 기본적으로 홈으로 이동 (일반 사용자 등)

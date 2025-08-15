@@ -26,7 +26,7 @@ const App: React.FC = () => {
       <AuthProvider> {/* Wrap with AuthProvider */}
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} /> {/* New login route */}
+          <Route path="/auth/login" element={<LoginPage />} /> {/* Updated login route */}
           
           <Route element={<UserLayout />}>
             <Route path="/apply" element={<ApplyPage />} />
@@ -34,14 +34,17 @@ const App: React.FC = () => {
             <Route path="/safety" element={<SafetyInfoPage />} />
           </Route>
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
+          {/* Protected Routes for Guardroom */}
+          <Route element={<ProtectedRoute allowedRoles={['guardroom']} />}>
             <Route path="/guardroom" element={<GuardroomLayout />}>
               <Route path="dashboard" element={<GuardroomDashboardContent />} />
               <Route path="qr-scanner" element={<QRScanner />} />
               <Route index element={<GuardroomDashboardContent />} />
             </Route>
+          </Route>
 
+          {/* Protected Routes for Admin */}
+          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
             <Route path="/admin" element={<AdminLayout />}>
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="approvals" element={<ApprovalsPage />} />
