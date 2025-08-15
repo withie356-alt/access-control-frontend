@@ -504,7 +504,7 @@ const api = {
     return data[0] as Manager;
   },
 
-  deleteManager: async (id: string): Promise<{ id: string }> => {
+    deleteManager: async (id: string): Promise<{ id: string }> => {
     console.log('API: Deleting manager', id);
     const { error } = await supabase.from('managers').delete().eq('id', id);
     if (error) {
@@ -512,6 +512,65 @@ const api = {
       throw error;
     }
     return { id };
+  },
+
+  getApplicationByQrid: async (qrid: string): Promise<FullAccessApplication | null> => {
+    console.log('API: Fetching application by QRID', qrid);
+    const applicationId = qrid.split('+')[0];
+    if (!applicationId) {
+      console.error('Invalid QRID format');
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from('access_applications')
+      .select(`
+        *,
+        projects(*, managers(name, phone, department_id, departments(name))),
+        companies(*, departments(name), managers(name, phone))
+      `)
+      .eq('qrid', qrid) // Use qrid directly for lookup
+      .single();
+
+    if (error) {
+      console.error('Error fetching application by QRID:', error);
+      // If no rows are found, Supabase returns an error, so we handle it gracefully
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw error;
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    const app: any = data;
+
+    // Fetch the latest access log for this qrid to determine current status
+    const { data: logs, error: logsError } = await supabase
+      .from('access_logs')
+      .select('event_type, timestamp')
+      .eq('qrid', qrid)
+      .order('timestamp', { ascending: false });
+
+    if (logsError) {
+      console.error('Error fetching access logs for QRID:', logsError);
+      // Continue without log info if there's an error
+    }
+
+    const latestLog = logs && logs.length > 0 ? logs[0] : null;
+
+    const fullApplication: FullAccessApplication = {
+      ...app,
+      projectName: app.projects?.name,
+      projectManagerName: app.projects?.managers?.name,
+      companyName: app.companies?.name || app.company_name,
+      checkInTime: latestLog && latestLog.event_type === 'check_in' ? new Date(latestLog.timestamp).toLocaleTimeString('ko-KR') : undefined,
+      checkOutTime: latestLog && latestLog.event_type === 'check_out' ? new Date(latestLog.timestamp).toLocaleTimeString('ko-KR') : undefined,
+    };
+
+    return fullApplication;
   },
 };
 

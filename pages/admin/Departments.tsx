@@ -339,28 +339,30 @@ const DepartmentsPage: React.FC = () => {
                                 {roleLabels[manager.role || 'general']}
                               </span>
                             </div>
-                            <button
-                              onClick={() => { setSelectedDepartmentId(dept.id); setEditingManager(manager); setIsManagerModalOpen(true); }}
-                              className="text-blue-600 hover:text-blue-800 text-sm"
-                            >
-                              수정
-                            </button>
-                            <button
-                              onClick={async () => {
-                                if (window.confirm('정말로 이 관리자를 삭제하시겠습니까?')) {
-                                  try {
-                                    await api.deleteManager(manager.id);
-                                    fetchData(); // 데이터 새로고침
-                                  } catch (error) {
-                                    console.error("Failed to delete manager:", error);
-                                    alert('관리자 삭제에 실패했습니다.');
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => { setSelectedDepartmentId(dept.id); setEditingManager(manager); setIsManagerModalOpen(true); }}
+                                className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full hover:bg-blue-200"
+                              >
+                                수정
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm('정말로 이 관리자를 삭제하시겠습니까?')) {
+                                    try {
+                                      await api.deleteManager(manager.id);
+                                      fetchData(); // 데이터 새로고침
+                                    } catch (error) {
+                                      console.error("Failed to delete manager:", error);
+                                      alert('관리자 삭제에 실패했습니다.');
+                                    }
                                   }
-                                }
-                              }}
-                              className="text-red-600 hover:text-red-800 text-sm ml-2"
-                            >
-                              삭제
-                            </button>
+                                }}
+                                className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full hover:bg-red-200"
+                              >
+                                삭제
+                              </button>
+                            </div>
                           </div>
                           <div className="text-sm text-gray-600">
                             <p>📧 {manager.email}</p>

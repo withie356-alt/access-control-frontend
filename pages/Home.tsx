@@ -58,8 +58,8 @@ const HomePage: React.FC = () => {
               title="신청 내역 조회"
               description={
                 <>
-                  Status Inquiry & Modification<br />
-                  신청 현황을 확인하고 정보를 수정하세요
+                  Status Inquiry & QR Check<br />
+                  신청현황 조회 및 출입QR 확인
                 </>
               }
             />
