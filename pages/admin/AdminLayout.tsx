@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'; // Added useNavigate
 import { HomeIcon, ChevronRightIcon, Bars3Icon, XMarkIcon } from '../../components/icons';
+import { useAuth } from '../../context/AuthContext'; // Added useAuth
 
 const AdminLayout: React.FC = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { logout } = useAuth();
+
+    useEffect(() => {
+        // 이 로직은 ProtectedRoute와 중복되므로 제거합니다.
+    }, [location.pathname, logout, navigate]);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const pathnames = location.pathname.split('/').filter((x) => x);
 
@@ -44,6 +51,12 @@ const AdminLayout: React.FC = () => {
                                    {link.label}
                                </Link>
                            ))}
+                           <button
+                                onClick={() => { logout(); navigate('/'); }}
+                                className="px-2 lg:px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:bg-gray-100"
+                            >
+                                로그아웃
+                            </button>
                         </div>
 
                         <button
@@ -67,6 +80,13 @@ const AdminLayout: React.FC = () => {
                                         {link.label}
                                     </Link>
                                 ))}
+                                {/* 로그아웃 버튼 추가 */}
+                                <button
+                                    onClick={() => { logout(); navigate('/'); setIsMobileMenuOpen(false); }}
+                                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors text-gray-600 hover:bg-gray-100"
+                                >
+                                    로그아웃
+                                </button>
                             </div>
                         </div>
                     )}

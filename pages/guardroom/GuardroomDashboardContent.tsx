@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from '../../services/api';
-import { DailyStats, ApplicationStatus, FullAccessApplication } from '../../types'; // FullAccessApplication 임포트 추가
+import { DailyStats, ApplicationStatus, FullAccessApplication, AccessLogEntry } from '../../types'; // FullAccessApplication 임포트 추가
 
 // Person 타입 - FullAccessApplication으로 대체
 interface Person extends FullAccessApplication {}
@@ -19,7 +19,7 @@ const GuardroomDashboardContent: React.FC = () => {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const [people, setPeople] = useState<FullAccessApplication[]>([]); // 실제 데이터 저장
+  const [people, setPeople] = useState<AccessLogEntry[]>([]); // 실제 데이터 저장
 
   // Get current posts
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -48,10 +48,8 @@ const GuardroomDashboardContent: React.FC = () => {
         });
 
         // 출입 신청 데이터 가져오기
-        const applicationsData = await api.getAccessApplications();
-        // created_at 기준으로 내림차순 정렬
-        const sortedApplications = applicationsData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        setPeople(sortedApplications);
+        const accessLogsData = await api.getTodaysAccessLogs();
+        setPeople(accessLogsData);
 
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -98,26 +96,17 @@ const GuardroomDashboardContent: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {currentPeople.map((person) => {
-                const status =
-                  person.checkInTime && !person.checkOutTime ? '출근' : person.checkInTime && person.checkOutTime ? '퇴근' : '미출근';
+                const status = person.event_type === 'check_in' ? '출근' : '퇴근';
                 const badge =
                   status === '출근'
                     ? 'bg-emerald-500'
-                    : status === '퇴근'
-                    ? 'bg-gray-500'
-                    : 'bg-slate-400';
+                    : 'bg-gray-500';
 
-                const time = status === '출근' ? person.checkInTime : person.checkOutTime;
-                const today = new Date();
-                const yyyy = today.getFullYear();
-                const mm = String(today.getMonth() + 1).padStart(2, '0');
-                const dd = String(today.getDate()).padStart(2, '0');
-                const formattedDate = `${yyyy}-${mm}-${dd}`;
-                const displayTime = time ? `${formattedDate} ${time}` : '';
+                const time = new Date(person.timestamp).toLocaleTimeString('ko-KR');
 
                 return (
-                  <tr key={person.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-1 py-4 whitespace-nowrap text-center text-sm text-gray-500">{displayTime}</td>
+                  <tr key={person.log_id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-1 py-4 whitespace-nowrap text-center text-sm text-gray-500">{time}</td>
                     <td className="px-1 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                       <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full ${badge} text-white text-xs font-semibold`}>
                         {status}
@@ -190,7 +179,7 @@ const GuardroomDashboardContent: React.FC = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="entered" fill="#38bdf8" name="출입" />
+              <Bar dataKey="entered" fill="#38bdf8" name="출근" />
               <Bar dataKey="exited" fill="#fbbf24" name="퇴근" />
             </BarChart>
           </ResponsiveContainer>

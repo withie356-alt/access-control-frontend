@@ -1,9 +1,17 @@
-import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { HomeIcon, ChevronRightIcon } from '../../components/icons';
+import React, { useState, useEffect } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'; // Added useNavigate
+import { HomeIcon, ChevronRightIcon, Bars3Icon, XMarkIcon } from '../../components/icons';
+import { useAuth } from '../../context/AuthContext'; // Added useAuth
 
 const GuardroomLayout: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  useEffect(() => {
+    // 이 로직은 ProtectedRoute와 중복되므로 제거합니다.
+  }, [location.pathname, logout, navigate]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathnames = location.pathname.split('/').filter((x) => x);
 
   const breadcrumbMap: { [key: string]: string } = {
@@ -22,7 +30,7 @@ const GuardroomLayout: React.FC = () => {
               <span className="text-base sm:text-xl font-bold text-power-blue-800 truncate">경비실 시스템</span>
             </Link>
 
-            <div className="flex items-center space-x-1 lg:space-x-2">
+            <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
               <Link
                 to="/guardroom/dashboard"
                 className={`px-2 lg:px-3 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/guardroom/dashboard' ? 'text-power-blue-700 bg-power-blue-100' : 'text-gray-600 hover:bg-gray-100'}`}
@@ -35,8 +43,48 @@ const GuardroomLayout: React.FC = () => {
               >
                 QR입력
               </Link>
+              <button
+                onClick={() => { logout(); navigate('/'); }}
+                className="px-2 lg:px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:bg-gray-100"
+              >
+                로그아웃
+              </button>
             </div>
+
+            <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+                {isMobileMenuOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
+            </button>
           </div>
+
+          {isMobileMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 bg-white">
+                <div className="py-2 space-y-1">
+                    <Link
+                        to="/guardroom/dashboard"
+                        className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${location.pathname === '/guardroom/dashboard' ? 'text-power-blue-700 bg-power-blue-100' : 'text-gray-600 hover:bg-gray-100'}`}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                        대시보드
+                    </Link>
+                    <Link
+                        to="/guardroom/qr-scanner"
+                        className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${location.pathname === '/guardroom/qr-scanner' ? 'text-power-blue-700 bg-power-blue-100' : 'text-gray-600 hover:bg-gray-100'}`}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                        QR입력
+                    </Link>
+                    <button
+                        onClick={() => { logout(); navigate('/'); setIsMobileMenuOpen(false); }}
+                        className="block w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors text-gray-600 hover:bg-gray-100"
+                    >
+                        로그아웃
+                    </button>
+                </div>
+            </div>
+          )}
         </nav>
       </header>
 

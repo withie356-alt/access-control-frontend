@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
 import api from '../../services/api';
 import { FullAccessApplication } from '../../types';
 
@@ -15,7 +15,6 @@ const QRScanner: React.FC = () => {
     const closeModal = () => {
         setShowModal(false);
         setApplication(null);
-        setScannedText('');
         if (modalTimerRef.current) {
             clearTimeout(modalTimerRef.current);
             modalTimerRef.current = null;
@@ -54,19 +53,21 @@ const QRScanner: React.FC = () => {
             setModalMessage('처리 중 오류가 발생했습니다.');
         } finally {
             setIsLoading(false);
+            setScannedText(''); // Clear the input here.
             modalTimerRef.current = setTimeout(() => {
                 closeModal();
-            }, 5000);
+            }, 2000);
         }
     };
 
-    useEffect(() => {
+        useEffect(() => {
         const scanner = new Html5QrcodeScanner(
             "reader",
             {
                 fps: 10,
                 qrbox: { width: 250, height: 250 },
-                rememberLastUsedCamera: true
+                rememberLastUsedCamera: true,
+                supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
             },
             false // verbose
         );
@@ -86,9 +87,6 @@ const QRScanner: React.FC = () => {
         qrCodeScannerRef.current = scanner;
 
         return () => {
-            if (modalTimerRef.current) {
-                clearTimeout(modalTimerRef.current);
-            }
             if (qrCodeScannerRef.current) {
                 qrCodeScannerRef.current.clear().catch(error => {
                     console.error("Failed to clear html5QrcodeScanner", error);
@@ -104,6 +102,12 @@ const QRScanner: React.FC = () => {
     const handleManualInputSubmit = () => {
         if (scannedText) {
             handleScan(scannedText);
+        }
+    };
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            handleManualInputSubmit();
         }
     };
 
@@ -124,6 +128,7 @@ const QRScanner: React.FC = () => {
                                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-power-blue-500 focus:border-power-blue-500 sm:text-sm"
                                 value={scannedText}
                                 onChange={handleManualInputChange}
+                                onKeyDown={handleKeyDown}
                                 placeholder="QR 코드 텍스트가 여기에 표시됩니다."
                             />
                         </div>

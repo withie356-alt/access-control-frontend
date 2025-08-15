@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HashRouter, Routes, Route, Link } from 'react-router-dom';
 import HomePage from './pages/Home';
@@ -16,33 +15,44 @@ import CompaniesPage from './pages/admin/Companies';
 import DepartmentsPage from './pages/admin/Departments';
 import UserLayout from './pages/user/UserLayout';
 
+// New imports for authentication
+import { AuthProvider } from './context/AuthContext';
+import LoginPage from './pages/auth/Login';
+import ProtectedRoute from './components/ProtectedRoute';
+
 const App: React.FC = () => {
   return (
     <HashRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        
-        <Route element={<UserLayout />}>
-          <Route path="/apply" element={<ApplyPage />} />
-          <Route path="/check" element={<CheckStatusPage />} />
-          <Route path="/safety" element={<SafetyInfoPage />} />
-        </Route>
+      <AuthProvider> {/* Wrap with AuthProvider */}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} /> {/* New login route */}
+          
+          <Route element={<UserLayout />}>
+            <Route path="/apply" element={<ApplyPage />} />
+            <Route path="/check" element={<CheckStatusPage />} />
+            <Route path="/safety" element={<SafetyInfoPage />} />
+          </Route>
 
-        <Route path="/guardroom" element={<GuardroomLayout />}>
-          <Route path="dashboard" element={<GuardroomDashboardContent />} />
-          <Route path="qr-scanner" element={<QRScanner />} />
-          <Route index element={<GuardroomDashboardContent />} />
-        </Route>
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/guardroom" element={<GuardroomLayout />}>
+              <Route path="dashboard" element={<GuardroomDashboardContent />} />
+              <Route path="qr-scanner" element={<QRScanner />} />
+              <Route index element={<GuardroomDashboardContent />} />
+            </Route>
 
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="approvals" element={<ApprovalsPage />} />
-          <Route path="projects" element={<ProjectsPage />} />
-          <Route path="companies" element={<CompaniesPage />} />
-          <Route path="departments" element={<DepartmentsPage />} />
-          <Route index element={<DashboardPage />} />
-        </Route>
-      </Routes>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="approvals" element={<ApprovalsPage />} />
+              <Route path="projects" element={<ProjectsPage />} />
+              <Route path="companies" element={<CompaniesPage />} />
+              <Route path="departments" element={<DepartmentsPage />} />
+              <Route index element={<DashboardPage />} />
+            </Route>
+          </Route>
+        </Routes>
+      </AuthProvider>
     </HashRouter>
   );
 };

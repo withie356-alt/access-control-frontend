@@ -106,3 +106,9 @@ export interface StatusStats {
     name: string;
     value: number;
 }
+
+export interface AccessLogEntry extends FullAccessApplication {
+  log_id: string;
+  event_type: 'check_in' | 'check_out';
+  timestamp: string;
+}

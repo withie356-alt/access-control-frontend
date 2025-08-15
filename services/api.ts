@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { AccessApplication, ApplicationStatus, Company, Project, DailyStats, StatusStats, Department, FullAccessApplication, AccessLog, Manager } from '../types';
+import { AccessApplication, ApplicationStatus, Company, Project, DailyStats, StatusStats, Department, FullAccessApplication, AccessLog, Manager, AccessLogEntry } from '../types';
 
 // Helper function to format date for QR code
 const formatQrDate = (date: Date): string => {
@@ -13,6 +13,85 @@ const formatQrDate = (date: Date): string => {
 };
 
 const api = {
+  getTodaysAccessLogs: async (): Promise<AccessLogEntry[]> => {
+    console.log("API: Fetching today's access logs with applicant info");
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    // 1. Fetch today's access logs
+    const { data: logs, error: logsError } = await supabase
+        .from('access_logs')
+        .select('*')
+        .gte('timestamp', today.toISOString())
+        .lt('timestamp', tomorrow.toISOString())
+        .order('timestamp', { ascending: false });
+
+    if (logsError) {
+        console.error("Error fetching today's access logs:", logsError);
+        throw logsError;
+    }
+
+    if (!logs) {
+        return [];
+    }
+
+    // 2. Get unique application IDs from QRIDs
+    const applicationIds = [...new Set(logs.map(log => log.qrid.split('+')[0]))];
+
+    if (applicationIds.length === 0) {
+        return [];
+    }
+
+    // 3. Fetch the corresponding applications
+    const { data: applications, error: appsError } = await supabase
+        .from('access_applications')
+        .select(`
+            *,
+            projects(*, managers(name, phone, department_id, departments(name))),
+        companies(*, departments(name), managers(name, phone))
+        `)
+        .in('id', applicationIds);
+
+    if (appsError) {
+        console.error('Error fetching applications for today\'s logs:', appsError);
+        throw appsError;
+    }
+
+    // 4. Combine application data with log data
+    const accessLogEntries = logs.map(log => {
+        const application = applications.find(app => app.id === log.qrid.split('+')[0]);
+        if (!application) return null; // Should not happen if data is consistent
+
+        return {
+            ...application,
+            // Re-structure to FullAccessApplication
+            projectName: application.projects?.name,
+            projectDescription: application.projects?.description,
+            projectStartDate: application.projects?.start_date,
+            projectEndDate: application.projects?.end_date,
+            projectManagerName: application.projects?.managers?.name,
+            projectManagerDepartmentName: application.projects?.managers?.departments?.name,
+            projectManagerPhone: application.projects?.managers?.phone,
+            companyName: application.companies?.name || application.company_name,
+            companyDepartmentName: application.companies?.departments?.name,
+            companyContactPerson: application.companies?.managers?.name || application.companies?.contact_person,
+            companyPhoneNumber: application.companies?.managers?.phone || application.companies?.phone_number,
+            
+            // Add log-specific details
+            log_id: log.id,
+            event_type: log.event_type,
+            timestamp: log.timestamp,
+            checkInTime: log.event_type === 'check_in' ? new Date(log.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : undefined,
+            checkOutTime: log.event_type === 'check_out' ? new Date(log.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : undefined,
+        };
+    }).filter(Boolean) as AccessLogEntry[]; // Filter out any nulls
+
+    return accessLogEntries;
+  },
+
   getProjects: async (): Promise<Project[]> => {
     console.log('API: Fetching projects with manager and department info');
     const { data, error } = await supabase.from('projects').select(`
