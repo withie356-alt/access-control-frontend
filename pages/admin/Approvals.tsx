@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../../services/api';
 import { AccessApplication, ApplicationStatus } from '../../types';
@@ -475,6 +474,7 @@ const EditApplicationModal: React.FC<{
                 className="w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm py-2 px-3" 
                 required 
               />
+              <p className="mt-1 text-xs text-gray-500">'-'없이 입력해주세요</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">성별</label>
