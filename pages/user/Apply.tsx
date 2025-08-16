@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { supabase } from '../../services/supabase';
 import { Project, Company, Department, Manager } from '../../types';
 import { AccessApplication } from '../../types'; // Added AccessApplication import
 
@@ -224,7 +225,22 @@ const ApplyPage: React.FC = () => {
       };
       
       await api.submitApplication(submissionData as Omit<AccessApplication, 'id' | 'status' | 'created_at' | 'qrCodeUrl'>);
-      navigate('/check', { state: { phone: formData.phone } });
+
+      // Create Supabase user
+      const email = `${formData.phone}@g-in.kr`;
+      const password = `password_${formData.phone}`;
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (signUpError && signUpError.message !== 'User already registered') {
+        console.error('Error signing up:', signUpError);
+        // We can choose to ignore this error and still navigate the user, 
+        // as the main application submission was successful.
+      }
+
+      navigate('/check', { state: { name: formData.name, phone: formData.phone } });
     } catch (err) {
       console.error("신청 제출 실패:", err);
       setError('신청 제출에 실패했습니다. 다시 시도해주세요.');
@@ -376,11 +392,10 @@ const ApplyPage: React.FC = () => {
                         className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                       >
                         <div className="font-medium text-gray-900">{company.name}</div>
-                        {(company.department_name || company.manager_name || company.phone_number) && (
+                        {(company.department_name || company.manager_name) && (
                           <div className="text-xs text-gray-500">
                             {company.department_name && `부서: ${company.department_name}`}
                             {company.manager_name && ` | 담당: ${company.manager_name}`}
-                            {company.phone_number && ` | 연락처: ${company.phone_number}`}
                           </div>
                         )}
                       </div>

@@ -1,4 +1,3 @@
-
 # 작업 내역 및 계획 (TODOs)
 
 이 문서는 프로젝트의 개발 작업 내역과 향후 계획을 관리합니다.
@@ -35,30 +34,30 @@
 - [x] 공사/업체 데이터 CRUD 로직 구현
 - [x] 대시보드 통계 데이터 제공 로직 구현
 
-## 향후 구현 계획 (Post-MVP)
+### 데이터베이스 (Supabase 연동)
+- [x] Supabase 프로젝트 생성 및 스키마 설계
+  - [x] `출입자관리Table` (access_requests)
+  - [x] `업체관리Table` (companies)
+  - [x] `공사관리Table` (projects)
+  - [x] `관리자Table` (admins)
+- [x] `services/api.ts`의 Mock API를 실제 Supabase Client API 호출로 교체
+- [x] RLS (Row Level Security) 정책 설정으로 데이터 접근 제어
+
+### 외부 API 및 서비스 연동 (일부)
+- [x] **QR 코드 생성**: Supabase Edge Function을 사용하여 QR 코드 생성 및 Storage에 저장하는 로직 구현
+- [x] **파일 저장소**: 관리자가 업로드하는 MSDS, 안전 교육 자료를 Supabase Storage에 업로드/다운로드하는 기능 구현
+- [ ] **인증**: Supabase Auth를 사용한 관리자 로그인 기능 구현
+- [ ] **협업 도구 연동**:
+    - [ ] **Microsoft Teams**: 출입 승인/반려 시 Teams 채널로 알림 전송 (Power Automate 또는 Webhook 사용)
+    - [ ] **Power Apps/Automate**: 보고서 생성 및 전송 자동화 연동 설계
+
+## 앞으로 해야 할 일들
 
 ### 테스트
 - [ ] 사용자 스토리 기반 테스트 케이스 작성 (Jest, React Testing Library)
 - [ ] 관리자 스토리 기반 테스트 케이스 작성
 - [ ] 컴포넌트 단위 테스트
 - [ ] E2E 테스트 (Cypress/Playwright)
-
-### 데이터베이스 (Supabase 연동)
-- [ ] Supabase 프로젝트 생성 및 스키마 설계
-  - [ ] `출입자관리Table` (access_requests)
-  - [ ] `업체관리Table` (companies)
-  - [ ] `공사관리Table` (projects)
-  - [ ] `관리자Table` (admins)
-- [ ] `services/api.ts`의 Mock API를 실제 Supabase Client API 호출로 교체
-- [ ] RLS (Row Level Security) 정책 설정으로 데이터 접근 제어
-
-### 외부 API 및 서비스 연동
-- [ ] **QR 코드 생성**: Supabase Edge Function을 사용하여 QR 코드 생성 및 Storage에 저장하는 로직 구현
-- [ ] **파일 저장소**: 관리자가 업로드하는 MSDS, 안전 교육 자료를 Supabase Storage에 업로드/다운로드하는 기능 구현
-- [ ] **인증**: Supabase Auth를 사용한 관리자 로그인 기능 구현
-- [ ] **협업 도구 연동**:
-    - [ ] **Microsoft Teams**: 출입 승인/반려 시 Teams 채널로 알림 전송 (Power Automate 또는 Webhook 사용)
-    - [ ] **Power Apps/Automate**: 보고서 생성 및 전송 자동화 연동 설계
 
 ### 기능 고도화
 - [ ] 보고서(CSV/PDF) 다운로드 기능 구현

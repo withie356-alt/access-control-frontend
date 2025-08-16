@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../../services/api';
-import { AccessApplication, ApplicationStatus } from '../../types';
+import { AccessApplication, ApplicationStatus, FullAccessApplication } from '../../types';
 import { ArrowPathIcon } from '../../components/icons';
 
 const ApprovalsPage: React.FC = () => {
@@ -189,6 +189,34 @@ const ApprovalsPage: React.FC = () => {
       </div>
 
       {/* 카드형 UI */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={selected.length === filteredApplications.length && filteredApplications.length > 0}
+            onChange={handleSelectAll}
+            className="form-checkbox h-5 w-5 text-blue-600"
+          />
+          <label className="text-gray-700">전체 선택</label>
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => handleApprovalAction(selected, 'approve')}
+            disabled={selected.length === 0}
+            className="px-4 py-2 bg-green-100 text-green-800 text-base leading-5 font-semibold rounded-lg hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            선택 승인
+          </button>
+          <button
+            onClick={() => handleApprovalAction(selected, 'reject')}
+            disabled={selected.length === 0}
+            className="px-4 py-2 bg-red-100 text-red-800 text-base leading-5 font-semibold rounded-lg hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            선택 반려
+          </button>
+        </div>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {loading ? (
           <div className="col-span-full text-center py-8">로딩 중...</div>
@@ -197,7 +225,15 @@ const ApprovalsPage: React.FC = () => {
             ) : filteredApplications.map(app => (
           <div key={app.id} className="rounded-xl shadow-md bg-white p-5 flex flex-col gap-2 border border-gray-100">
             <div className="flex items-center justify-between mb-2">
-              <div className="font-bold text-lg text-gray-800">{app.applicant_name}</div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(app.id)}
+                  onChange={() => handleSelection(app.id)}
+                  className="form-checkbox h-4 w-4 text-blue-600 mr-2"
+                />
+                <div className="font-bold text-lg text-gray-800">{app.applicant_name}</div>
+              </div>
                   <StatusBadge status={app.status} />
             </div>
             <div className="text-sm text-gray-600">업체: <span className="font-medium text-gray-800">{app.companyName || app.company_name || 'N/A'}</span></div>

@@ -2,11 +2,11 @@ const CACHE_NAME = 'access-control-system-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/index.css',
+  //'/index.css',
   // Note: For production, you'd cache the built JavaScript files (e.g., from /dist)
   // For development, you might need to adjust this or use a build tool to generate this list.
   // For now, we'll include the main entry point as a placeholder.
-  '/index.tsx', 
+  //'/index.tsx', 
   '/with-incheon-energy-icon.png',
   '/with-incheon-energy-logo.png',
   '/manifest.json'
@@ -46,5 +46,34 @@ self.addEventListener('activate', event => {
         })
       );
     })
+  );
+});
+
+self.addEventListener('push', event => {
+  const data = event.data.json();
+  console.log('Push received:', data);
+
+  const title = data.title || '새로운 알림';
+  const options = {
+    body: data.body || '자세한 내용을 확인하려면 탭하세요.',
+    icon: data.icon || '/with-incheon-energy-icon.png',
+    badge: data.badge || '/with-incheon-energy-icon.png',
+    data: {
+      url: data.url || '/'
+    }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  console.log('Notification click received.');
+
+  event.notification.close();
+
+  event.waitUntil(
+    clients.openWindow(event.notification.data.url)
   );
 });

@@ -1,52 +1,75 @@
-import React, { useState, useEffect } from 'react'; // useEffect 추가
+import React, { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../../services/api';
 import { AccessApplication, ApplicationStatus } from '../../types';
-import { useLocation } from 'react-router-dom'; // useLocation 추가
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const CheckStatusPage: React.FC = () => {
+  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const location = useLocation(); // useLocation 훅 사용
+  const location = useLocation();
+  const navigate = useNavigate();
   const [applications, setApplications] = useState<AccessApplication[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [searched, setSearched] = useState(false);
   const [editingApp, setEditingApp] = useState<AccessApplication | null>(null);
 
-  const handleSearch = async (e?: React.FormEvent) => { // e를 optional로 변경
-    if (e) e.preventDefault(); // e가 있을 때만 preventDefault 호출
-    if (!phone) {
-      setError('전화번호를 입력해주세요.');
+  const handleSearch = useCallback(async () => {
+    if (!name || !phone) {
+      setError('이름과 전화번호를 모두 입력해주세요.');
       return;
     }
     setIsLoading(true);
     setError('');
     setSearched(true);
+
     try {
-      const results = await api.getApplicationsByPhone(phone);
+      const results = await api.getApplicationsByNameAndPhone(name, phone);
       const sortedResults = results.sort((a, b) => {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
       setApplications(sortedResults);
+
     } catch (err) {
       setError('신청 내역을 불러오는 데 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
+  }, [name, phone]);
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearch();
+  }
+
+  const handleReset = () => {
+    setName('');
+    setPhone('');
+    setApplications([]);
+    setSearched(false);
+    setError('');
   };
 
   useEffect(() => {
-    if (location.state && location.state.phone) {
-      const initialPhone = location.state.phone;
-      setPhone(initialPhone);
+    const state = location.state as { name?: string; phone?: string; autoSearch?: boolean } | null;
+    if (state?.name && state?.phone) {
+      setName(state.name);
+      setPhone(state.phone);
+      // Clear the state from location to prevent re-triggering on refresh
+      navigate(location.pathname, { replace: true, state: { ...state, name: undefined, phone: undefined, autoSearch: true } });
     }
-  }, [location.state]);
+  }, [location.state, navigate]);
 
   useEffect(() => {
-    if (phone && location.state && location.state.phone === phone) {
-      handleSearch(); // phone 상태가 설정된 후 자동으로 검색
+    // Automatically search only if directed from Apply page
+    if (name && phone && location.state?.autoSearch) {
+      handleSearch();
+      // Clear the autoSearch flag
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [phone, location.state]); // phone과 location.state를 의존성 배열에 추가
+  }, [name, phone, location.state, handleSearch, navigate]);
+
 
   const handleUpdate = async (updatedApp: AccessApplication) => {
     if (!updatedApp) return;
@@ -56,7 +79,7 @@ const CheckStatusPage: React.FC = () => {
         alert('신청 정보가 수정되었습니다.');
         setEditingApp(null);
         // Refresh list after update
-        const results = await api.getApplicationsByPhone(phone);
+        const results = await api.getApplicationsByNameAndPhone(name, phone);
         setApplications(results);
     } catch(err) {
         setError('수정에 실패했습니다.');
@@ -88,23 +111,41 @@ const CheckStatusPage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-white p-8 rounded-lg shadow-md mb-6">
-        
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="전화번호를 입력하세요 ('-'없이 입력해주세요)"
-            className="flex-grow block w-full rounded-md border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 sm:text-sm py-2 px-3"
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="px-6 py-2 bg-power-blue-600 text-white rounded-md hover:bg-power-blue-700 disabled:bg-gray-400 whitespace-nowrap"
-          >
-            {isLoading ? '조회 중...' : '조회'}
-          </button>
-        </form>
+        {searched && !isLoading && applications.length > 0 ? (
+          <div className="flex justify-between items-center">
+            <p className="text-lg font-semibold">{name}님, 환영합니다.</p>
+            <button
+              onClick={handleReset}
+              className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 whitespace-nowrap"
+            >
+              조회정보 초기화
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleFormSubmit} className="flex flex-col sm:flex-row gap-4">
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="이름을 입력하세요"
+              className="flex-grow block w-full rounded-md border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 sm:text-sm py-2 px-3 bg-gray-100"
+            />
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="전화번호를 입력하세요 ('-'없이 입력해주세요)"
+              className="flex-grow block w-full rounded-md border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 sm:text-sm py-2 px-3 bg-gray-100"
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-6 py-2 bg-power-blue-600 text-white rounded-md hover:bg-power-blue-700 disabled:bg-gray-400 whitespace-nowrap"
+            >
+              {isLoading ? '조회 중...' : '조회'}
+            </button>
+          </form>
+        )}
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
       </div>
 
@@ -138,13 +179,18 @@ const CheckStatusPage: React.FC = () => {
                                     ) : (
                                         <p className="text-sm text-red-700">QR 코드를 생성할 수 없습니다. (QR ID 없음)</p>
                                     )}
+                                    {app.projectStartDate && app.projectEndDate && (
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            출입 가능일: {new Date(app.projectStartDate).toLocaleDateString('ko-KR')} ~ {new Date(app.projectEndDate).toLocaleDateString('ko-KR')}
+                                        </p>
+                                    )}
                                 </div>
                             )}
                         </div>
                     ))}
                 </div>
             ) : (
-                <p className="text-center py-8 text-gray-500">해당 전화번호로 등록된 신청 내역이 없습니다.</p>
+                <p className="text-center py-8 text-gray-500">해당 정보로 등록된 신청 내역이 없습니다.</p>
             )}
         </div>
       )}

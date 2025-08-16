@@ -178,14 +178,48 @@ const api = {
     return data[0] as AccessApplication;
   },
 
-  getApplicationsByPhone: async (phone: string): Promise<AccessApplication[]> => {
-    console.log('API: Fetching applications for phone', phone);
-    const { data, error } = await supabase.from('access_applications').select('*').eq('applicant_phone', phone);
+  getApplicationsByNameAndPhone: async (name: string, phone: string): Promise<FullAccessApplication[]> => {
+    console.log('API: Fetching applications for name and phone', name, phone);
+    const { data, error } = await supabase
+      .from('access_applications')
+      .select(`
+        *,
+        projects(*, managers(name, phone, department_id, departments(name))),
+        companies(*, departments(name), managers(name, phone))
+      `)
+      .eq('applicant_name', name)
+      .eq('applicant_phone', phone);
+
     if (error) {
-      console.error('Error fetching applications by phone:', error);
+      console.error('Error fetching applications by name and phone:', error);
       throw error;
     }
-    return data || [];
+
+    const fullApplications: FullAccessApplication[] = (data || []).map((app: any) => {
+      return {
+        ...app,
+        projectName: app.projects?.name,
+        projectDescription: app.projects?.description,
+        projectStartDate: app.projects?.start_date,
+        projectEndDate: app.projects?.end_date,
+        projectManagerName: app.projects?.managers?.name,
+        projectManagerDepartmentName: app.projects?.managers?.departments?.name,
+        projectManagerPhone: app.projects?.managers?.phone,
+        companyName: app.companies?.name || app.company_name,
+        companyDepartmentName: app.companies?.departments?.name,
+        companyContactPerson: app.companies?.managers?.name || app.companies?.contact_person,
+        companyPhoneNumber: app.companies?.managers?.phone || app.companies?.phone_number,
+      };
+    });
+
+    return fullApplications;
+  },
+
+  getApplicationsByPhone: async (phone: string): Promise<FullAccessApplication[]> => {
+    console.log('API: Fetching applications for phone', phone);
+    // This function is kept for compatibility, but now it will not be used.
+    // You can deprecate it or modify it to call getApplicationsByNameAndPhone with a dummy name.
+    return [];
   },
 
   updateApplication: async (id: string, data: Partial<AccessApplication>): Promise<AccessApplication> => {
