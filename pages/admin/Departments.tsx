@@ -38,7 +38,7 @@ const ManagerModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-30">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
-        <h2 className="text-xl font-bold mb-4">{manager ? '관리자 수정' : '관리자 추가'}</h2>
+        <h2 className="text-xl font-bold mb-4">{manager ? '관리자 수정' : <>관리자 추가 <span className="text-base">(승인요청 알림 발송)</span></>}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium">이름 *</label>
@@ -63,14 +63,15 @@ const ManagerModal: React.FC<{
             />
           </div>
           <div>
-            <label className="block text-sm font-medium">휴대전화번호 *</label>
+            <label className="block text-sm font-medium">연락처 *</label>
+            <p className="text-xs text-gray-500 mb-1">'-'없이 입력해주세요</p>
             <input 
               type="tel" 
               name="phone" 
               value={formData.phone} 
               onChange={handleChange} 
               className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3" 
-              placeholder="010-1234-5678"
+              placeholder="01000000000"
               required 
             />
           </div>

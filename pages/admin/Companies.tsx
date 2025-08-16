@@ -114,16 +114,7 @@ const CompanyModal: React.FC<{
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium">연락처</label>
-            <input
-              type="text"
-              name="phone_number"
-              value={formData.phone_number || ''}
-              readOnly
-              className="w-full mt-1 border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100"
-            />
-          </div>
+          
           <div className="flex justify-end space-x-2">
             <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">취소</button>
             <button type="submit" className="px-4 py-2 bg-power-blue-600 text-white rounded-md">저장</button>
@@ -211,14 +202,12 @@ const CompaniesPage: React.FC = () => {
       const lowercasedFilter = searchTerm.toLowerCase();
       const matchesName = company.name.toLowerCase().includes(lowercasedFilter);
       const matchesContactPerson = company.contact_person?.toLowerCase().includes(lowercasedFilter) || false;
-      const matchesPhoneNumber = company.phone_number?.toLowerCase().includes(lowercasedFilter) || false;
       const matchesDepartmentName = getDepartmentName(company.department_id).toLowerCase().includes(lowercasedFilter);
       const matchesManagerName = getManagerName(company.manager_id).toLowerCase().includes(lowercasedFilter);
 
       return (
         matchesName ||
         matchesContactPerson ||
-        matchesPhoneNumber ||
         matchesDepartmentName ||
         matchesManagerName
       );
@@ -248,7 +237,7 @@ const CompaniesPage: React.FC = () => {
         <div className="bg-white p-4 rounded-lg shadow-md mb-6">
           <input
             type="text"
-            placeholder="업체명, 담당자, 연락처 검색..."
+            placeholder="업체명, 담당부서, 담당자 검색..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full p-3 rounded-lg border-gray-300 shadow-sm"
@@ -263,7 +252,6 @@ const CompaniesPage: React.FC = () => {
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">업체명</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">담당부서</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">담당자</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">연락처</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
@@ -285,7 +273,6 @@ const CompaniesPage: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{getManagerName(c.manager_id)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{c.phone_number || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
                   <button
                     onClick={() => { setEditingCompany(c); setIsModalOpen(true); }}

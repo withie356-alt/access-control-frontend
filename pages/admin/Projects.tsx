@@ -53,7 +53,7 @@ const ProjectModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-20">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
-        <h2 className="text-xl font-bold mb-4">{project ? '공사 정보 수정' : '새 공사 등록'}</h2>
+        <h2 className="text-xl font-bold mb-4">{project ? '공사 정보 수정' : <>새 공사 등록 <span className="text-base">(시작,종료일은 출입기간입니다)</span></>}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium">공사명 *</label>

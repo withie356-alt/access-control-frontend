@@ -68,7 +68,11 @@ const ApplyPage: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    let newValue = value;
+    if (name === 'phone') {
+      newValue = value.replace(/-/g, ''); // Remove hyphens from phone number
+    }
+    setFormData(prev => ({ ...prev, [name]: newValue }));
   };
 
   const handleSiteRepresentativeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,8 +224,7 @@ const ApplyPage: React.FC = () => {
       };
       
       await api.submitApplication(submissionData as Omit<AccessApplication, 'id' | 'status' | 'created_at' | 'qrCodeUrl'>);
-      alert('출입 신청이 성공적으로 완료되었습니다. 신청 내역 조회 페이지로 이동합니다.');
-      navigate('/check');
+      navigate('/check', { state: { phone: formData.phone } });
     } catch (err) {
       console.error("신청 제출 실패:", err);
       setError('신청 제출에 실패했습니다. 다시 시도해주세요.');
@@ -282,8 +285,8 @@ const ApplyPage: React.FC = () => {
         {step === 2 && (
           <div className="space-y-8">
             {/* 공사계획 선택 섹션 */}
-            <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-              <h2 className="text-lg sm:text-xl font-semibold mb-4 text-blue-800">공사계획 선택</h2>
+            <div className="bg-power-blue-50 p-6 rounded-lg border border-power-blue-200">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 text-power-blue-800">공사계획 선택 <span className="text-sm font-normal text-gray-600">(시작,종료일은 출입기간입니다)</span></h2>
               <div>
                 <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-2">공사계획을 선택해주세요 *</label>
                 <select 
@@ -349,8 +352,8 @@ const ApplyPage: React.FC = () => {
             </div>
 
             {/* 소속업체 선택 섹션 */}
-            <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-              <h2 className="text-lg sm:text-xl font-semibold mb-4 text-green-800">소속업체 선택</h2>
+            <div className="bg-power-blue-50 p-6 rounded-lg border border-power-blue-200">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 text-power-blue-800">소속업체 선택 <span className="text-sm font-normal text-gray-600">(담당자에게 출입신청 알림)</span></h2>
               <div className="relative">
                 <label htmlFor="companySearch" className="block text-sm font-medium text-gray-700 mb-2">업체명을 입력하세요 *</label>
                 <input 
@@ -477,8 +480,8 @@ const ApplyPage: React.FC = () => {
             </div>
 
             {/* 기본정보 입력 섹션 */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">기본정보</h2>
+            <div className="bg-power-blue-50 p-6 rounded-lg border border-power-blue-200">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 text-power-blue-800">기본정보</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">성명 *</label>
@@ -494,6 +497,7 @@ const ApplyPage: React.FC = () => {
                 </div>
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">연락처 *</label>
+                  <p className="text-xs text-gray-500 mb-1">'-'없이 입력해주세요</p>
                   <input 
                     type="tel" 
                     name="phone" 
@@ -501,7 +505,7 @@ const ApplyPage: React.FC = () => {
                     value={formData.phone} 
                     onChange={handleInputChange} 
                     className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 text-sm sm:text-base py-3 px-4" 
-                    placeholder="010-0000-0000" 
+                    placeholder="01000000000" 
                     required 
                   />
                 </div>

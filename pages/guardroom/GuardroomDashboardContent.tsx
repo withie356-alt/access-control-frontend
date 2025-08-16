@@ -39,6 +39,22 @@ const GuardroomDashboardContent: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // 1. 자정 초기화 로직 추가
+        const lastVisitDate = localStorage.getItem('lastGuardroomDashboardVisitDate'); // Guardroom 전용 키 사용
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
+
+        if (lastVisitDate !== today) {
+          // 날짜가 바뀌었으면 초기화
+          setStats({
+            dailyStats: [], // 일자별 통계는 API에서 다시 가져올 것이므로 빈 배열로 초기화
+            onSiteNow: 0,
+            exitedToday: 0,
+          });
+          setPeople([]); // 출입 로그도 초기화
+          localStorage.setItem('lastGuardroomDashboardVisitDate', today); // Guardroom 전용 키 사용
+          console.log('Guardroom Dashboard stats reset due to new day.');
+        }
+
         // 대시보드 통계 데이터 가져오기
         const statsData = await api.getDashboardStats();
         setStats({

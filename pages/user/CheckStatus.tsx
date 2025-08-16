@@ -1,18 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // useEffect 추가
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../../services/api';
 import { AccessApplication, ApplicationStatus } from '../../types';
+import { useLocation } from 'react-router-dom'; // useLocation 추가
 
 const CheckStatusPage: React.FC = () => {
   const [phone, setPhone] = useState('');
+  const location = useLocation(); // useLocation 훅 사용
   const [applications, setApplications] = useState<AccessApplication[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [searched, setSearched] = useState(false);
   const [editingApp, setEditingApp] = useState<AccessApplication | null>(null);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async (e?: React.FormEvent) => { // e를 optional로 변경
+    if (e) e.preventDefault(); // e가 있을 때만 preventDefault 호출
     if (!phone) {
       setError('전화번호를 입력해주세요.');
       return;
@@ -22,13 +24,29 @@ const CheckStatusPage: React.FC = () => {
     setSearched(true);
     try {
       const results = await api.getApplicationsByPhone(phone);
-      setApplications(results);
+      const sortedResults = results.sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      setApplications(sortedResults);
     } catch (err) {
       setError('신청 내역을 불러오는 데 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (location.state && location.state.phone) {
+      const initialPhone = location.state.phone;
+      setPhone(initialPhone);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    if (phone && location.state && location.state.phone === phone) {
+      handleSearch(); // phone 상태가 설정된 후 자동으로 검색
+    }
+  }, [phone, location.state]); // phone과 location.state를 의존성 배열에 추가
 
   const handleUpdate = async (updatedApp: AccessApplication) => {
     if (!updatedApp) return;
@@ -76,7 +94,7 @@ const CheckStatusPage: React.FC = () => {
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="전화번호를 입력하세요 (예: 010-1234-5678)"
+            placeholder="전화번호를 입력하세요 ('-'없이 입력해주세요)"
             className="flex-grow block w-full rounded-md border-gray-300 shadow-sm focus:border-power-blue-500 focus:ring-power-blue-500 sm:text-sm py-2 px-3"
           />
           <button
@@ -97,6 +115,9 @@ const CheckStatusPage: React.FC = () => {
                 <div className="space-y-6">
                     {applications.map(app => (
                         <div key={app.id} className="border border-gray-200 rounded-lg p-6">
+                            <div className="text-right text-sm text-gray-500 mb-2">
+                                신청일시: {new Date(app.created_at).toLocaleString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
+                            </div>
                             {app.status === ApplicationStatus.Pending ? (
                                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                                     <p className="font-semibold text-yellow-800">승인 대기중입니다.</p>
