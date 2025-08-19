@@ -87,7 +87,7 @@ const AppContent: React.FC = () => {
           console.log("Notification permission granted.");
 
           // Get FCM token
-          const currentToken = await getToken(messaging, { vapidKey: import.meta.env.VITE_VAPID_PUBLIC_KEY }); 
+          const currentToken = await getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY }); 
           
           if (currentToken) {
             console.log("FCM Token:", currentToken);
