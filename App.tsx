@@ -35,42 +35,42 @@ import ProtectedRoute from './components/ProtectedRoute';
 const AppContent: React.FC = () => {
   const { user } = useAuth(); // useAuth must be called inside a child of AuthProvider
 
-  useEffect(() => {
-    const createTables = async () => {
-      const {
-        data,
-        error
-      } = await supabase.rpc('exec', {
-        sql: `
-          CREATE TABLE IF NOT EXISTS public.push_subscriptions (
-            id uuid NOT NULL,
-            subscription jsonb NOT NULL,
-            created_at timestamp with time zone NOT NULL DEFAULT now(),
-            updated_at timestamp with time zone NOT NULL DEFAULT now(),
-            CONSTRAINT push_subscriptions_pkey PRIMARY KEY (id),
-            CONSTRAINT push_subscriptions_id_fkey FOREIGN KEY (id) REFERENCES auth.users (id)
-          );
+  // useEffect(() => {
+  //   const createTables = async () => {
+  //     const {
+  //       data,
+  //       error
+  //     } = await supabase.rpc('exec', {
+  //       sql: `
+  //         CREATE TABLE IF NOT EXISTS public.push_subscriptions ( 
+  //           id uuid NOT NULL,
+  //           subscription jsonb NOT NULL,
+  //           created_at timestamp with time zone NOT NULL DEFAULT now(),
+  //           updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  //           CONSTRAINT push_subscriptions_pkey PRIMARY KEY (id),
+  //           CONSTRAINT push_subscriptions_id_fkey FOREIGN KEY (id) REFERENCES auth.users (id)
+  //         );
 
-          CREATE TABLE IF NOT EXISTS public.fcm_tokens (
-            user_id uuid NOT NULL,
-            fcm_token text NOT NULL,
-            created_at timestamp with time zone NOT NULL DEFAULT now(),
-            updated_at timestamp with time zone NOT NULL DEFAULT now(),
-            CONSTRAINT fcm_tokens_pkey PRIMARY KEY (user_id),
-            CONSTRAINT fcm_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users (id)
-          );
-        `
-      });
+  //         CREATE TABLE IF NOT EXISTS public.fcm_tokens ( 
+  //           user_id uuid NOT NULL,
+  //           fcm_token text NOT NULL,
+  //           created_at timestamp with time zone NOT NULL DEFAULT now(),
+  //           updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  //           CONSTRAINT fcm_tokens_pkey PRIMARY KEY (user_id),
+  //           CONSTRAINT fcm_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users (id)
+  //         );
+  //       `
+  //     });
 
-      if (error) {
-        console.error('Error creating tables:', error);
-      } else {
-        console.log('Successfully created or ensured tables exist.');
-      }
-    };
+  //     if (error) {
+  //       console.error('Error creating tables:', error);
+  //     } else {
+  //       console.log('Successfully created or ensured tables exist.');
+  //     }
+  //   };
 
-    createTables();
-  }, []);
+  //   createTables();
+  // }, []);
 
   useEffect(() => {
     // This function requests notification permission and gets the FCM token
